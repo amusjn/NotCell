@@ -1,0 +1,32 @@
+## Interface: 11200
+## Title: NotCell
+## Notes: Party and raid unit frames for WoW 1.12.1 -- Requires the ClassicAPI; bundled HealComm-1.0 supports incoming-heal prediction.
+## Author: amusjn (Vanilla backport); original Cell contributors
+## Version: 1.0.0
+## SavedVariables: NotCellDB, NotCellVanillaDB, CellDB, CellVanillaDB
+## SavedVariablesPerCharacter: NotCellCharacterDB, CellCharacterDB
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\HealComm-1.0\AceLibrary\AceLibrary.lua
+Libs\HealComm-1.0\AceOO-2.0\AceOO-2.0.lua
+Libs\HealComm-1.0\AceConsole-2.0\AceConsole-2.0.lua
+Libs\HealComm-1.0\AceDebug-2.0\AceDebug-2.0.lua
+Libs\HealComm-1.0\AceEvent-2.0\AceEvent-2.0.lua
+Libs\HealComm-1.0\AceAddon-2.0\AceAddon-2.0.lua
+Libs\HealComm-1.0\AceHook-2.1\AceHook-2.1.lua
+Libs\HealComm-1.0\AceLocale-2.2\AceLocale-2.2.lua
+Libs\HealComm-1.0\RosterLib-2.0\RosterLib-2.0.lua
+Libs\HealComm-1.0\Compost-2.0\Compost-2.0.lua
+Libs\HealComm-1.0\Deformat-2.0\Deformat-2.0.lua
+Libs\HealComm-1.0\Gratuity-2.0\Gratuity-2.0.lua
+Libs\HealComm-1.0\ItemBonusLib-1.0\Locales\enUS.lua
+Libs\HealComm-1.0\ItemBonusLib-1.0\ItemBonusLib-1.0.lua
+Libs\HealComm-1.0\HealComm-1.0\HealComm-1.0.lua
+
+Vanilla\NotCell.lua
+Vanilla\ClickCastProfiles.lua
+Vanilla\Layouts.lua
+Vanilla\OptionsGeneral.lua
+Vanilla\OptionsAppearance.lua
+Vanilla\OptionsIndicators.lua
