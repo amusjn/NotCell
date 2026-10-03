@@ -1,89 +1,58 @@
+<div align="center">
+
+[![RavenCraft](https://img.shields.io/badge/RavenCraft-1.18.1-1f1f1f?style=for-the-badge&labelColor=555555)](https://ravencraft.io) [![CapyCraft](https://img.shields.io/badge/CapyCraft-1.18.1-8b5a2b?style=for-the-badge&labelColor=555555)](https://capycraft.io) [![OctoWoW](https://img.shields.io/badge/OctoWoW-1.18.1-9027df?style=for-the-badge&labelColor=555555)](https://octowow.st)
+
+[![ClassicAPI](https://img.shields.io/badge/ClassicAPI-Required-cb1c43?style=for-the-badge&labelColor=555555)](https://github.com/brues-code/ClassicAPI) [![SuperWoW](https://img.shields.io/badge/SuperWoW-Required-cb1c43?style=for-the-badge&labelColor=555555)](https://github.com/balakethelock/SuperWoW) [![SuperCleveRoidMacros](https://img.shields.io/badge/SuperCleveRoidMacros-Recommended-f28c00?style=for-the-badge&labelColor=555555)](https://github.com/brues-code/SuperCleveRoidMacros)
+
 # NotCell
 
-NotCell is a party and raid unit-frame addon for the Vanilla API, backported from Cell and adapted for the WoW 1.12.1 / OctoWoW 1.18.1 client.
+A party and raid unit-frame for World of Warcraft 1.12 — **ClassicAPI is required.**
 
-## Supported client
+Originally backported from [Cell 3.3.5 backport](https://github.com/Keoo88/Cell-3.3.5-backport). Credits to the original [Cell](https://github.com/enderneko/Cell) author and contributors. NotCell was heavily inspired by Cell.
 
-- World of Warcraft interface version **11200** (1.12.1)
-- Tested target: **OctoWoW 1.18.1**
+</div>
 
 ## Features
 
-- Solo, party, and raid unit frames with per-layout sizing, growth, health fill, and power bar placement.
-- Automatic layout switching when moving between solo, party, and raid groups.
-- Click-casting on NotCell and supported Blizzard unit frames, including mouse and keyboard binds.
-- Character-specific click-casting profiles and bindings.
-- Incoming-heal prediction through bundled HealComm-1.0 and `UnitGetIncomingHeals` when supported.
-- Text, status, role, leader, ready-check, raid mark, buff, debuff, missing buff, and healer indicators.
-- Debuff display styles including border glow, solid tint, and gradient.
-- Appearance controls for class/custom colors, opacity, statusbar textures, fonts, and out-of-range alpha.
-- Live Options previews, selected-indicator isolation, draggable group previews, and a red frame-position handle.
-- First-run setup wizard with Light/Dark modes, layout growth and bar direction controls, and a live guide preview.
-- Layout import/export and visual previews in texture and font dropdowns.
-
-## Dependencies
-
-### Required
-
-- OctoWoW 1.18.1 / WoW 1.12.1 with the **ClassicAPI client extension** installed and enabled.
-
-### Optional integrations
-
-- **SuperWoW / SuperWoWhook:** Enables HealComm's cast-event path where available. HealComm-1.0 is bundled; without SuperWoW it uses its supported fallback events and hooks.
-- **LibSharedMedia-3.0:** If another addon provides it, NotCell can use its registered fonts and statusbar textures. NotCell also includes built-in options and does not require LibSharedMedia.
-
-HealComm messages from other players require compatible HealComm support on their clients. NotCell also reads `UnitGetIncomingHeals` when the client API provides it.
+- Solo, party, and raid unit frames with separate layouts, sizing, settings, and indicators.
+- Automatically switches layouts as you move between solo, party, and raid groups.
+- Click-casting for NotCell and Blizzard unit frames, configured in NotCell options, with keyboard and mouse binds.
+  - Keep click-casting profiles specific to each character.
+- Incoming-heal prediction powered by bundled HealComm.
+- Choose how debuffs appear on your frames.
+- Additional fonts and status bar textures from [pfUI-CustomMedia](https://github.com/mr-rosh/pfUI-CustomMedia).
+- Adjust frame size, health and power bar orientation, and bar placement.
+- See settings changes immediately in the live preview frame.
+- Use the Group Filter to preview party and raid layouts without joining a group.
+- Export and import NotCell settings.
 
 ## Installation
 
-1. Copy the `NotCell` folder into `Interface\AddOns\` so the file `Interface\AddOns\NotCell\NotCell.toc` exists.
-2. Keep the ClassicAPI client extension enabled.
-3. Start the game and enable **NotCell** in the AddOns list if needed.
-4. On first use, follow the setup window or skip it and open it later with `/notcell setup`.
-
-### Upgrade from Cell
-
-NotCell uses new SavedVariables names and a new addon folder, so the game does not automatically associate the old Cell settings file with NotCell. To carry settings over, close the game and back up the SavedVariables files first. Copy the account-level `Cell.lua` to `NotCell.lua` in `WTF\Account\<account>\SavedVariables\`; also copy each character's `Cell.lua` to `NotCell.lua` in that character's `WTF\Account\<account>\<realm>\<character>\SavedVariables\` folder. On its first load, NotCell migrates the old `CellDB`, `CellVanillaDB`, and `CellCharacterDB` tables to the new `NotCell*DB` tables. Keep the original files until you confirm the migration succeeded. Do not run both addons together during this migration.
+1. Download and copy the NotCell folder into `Interface\AddOns\` so the file `Interface\AddOns\NotCell\NotCell.toc` exists.
+2. Start the game and, in character selection, ensure the NotCell addon is enabled.
+3. Set your Script Memory (MB) to 0.
+4. On first use, follow the setup window or skip it and open it later with `/notcell setup` or through the options window.
 
 ## Slash commands
 
 - `/notcell` — show the command list.
-- `/notcell opt` or `/notcell options` — open Options.
-- `/notcell setup` — open the setup wizard.
-- `/notcell minimap show` — show the minimap button.
-- `/notcell blizz hide` / `/notcell blizz show` — hide or restore supported Blizzard group frames. Player, Target, and Target of Target are not hidden.
-- `/notcell healthcolor class` — use class-colored health bars.
-- `/notcell healthcolor custom RRGGBB` — set a custom health bar color.
+- `/notcell opt` — open options.
+- `/notcell options` — open options.
+- `/notcell setup` — open setup.
 - `/notcell show` / `/notcell hide` — show or hide NotCell frames.
-- `/notcell preview` — toggle a sample party preview.
-- `/notcell preview party`, `status`, `raid10`, `raid20`, `raid25`, or `raid` — show sample units for that preview.
-
-## First-run setup
-
-The setup wizard runs once for a fresh NotCell installation and can be reopened at any time. It offers Light or Dark starting mode, frame growth direction, health fill direction, power bar direction and side, Heal Prediction, and Blizzard group-frame hiding. It also offers Healer Indicators and shows a single live guide frame that updates as choices change. The wizard can be skipped; skipped setup is not shown again automatically.
+- `/notcell blizz show` / `/notcell blizz hide` — show or hide supported Blizzard group frames.
 
 ## Configuration
 
-- **General:** setup, Blizzard frame visibility, minimap, tooltips, and general behavior.
-- **Appearance:** colors, backgrounds, opacity, health and power bars, textures, fonts, and range fade.
-- **Layouts:** layout profiles, group filters, sizing, spacing, growth, orientation, previews, and import/export.
-- **Click-Castings:** per-character profiles and binds for NotCell and supported Blizzard unit frames.
-- **Indicators:** text and icon indicators, aura filters, missing buffs, healers, and debuff display styles.
-- **About:** version, credits, and quick tips.
-
-Appearance, layout, indicator, and general settings are account-wide. Click-Casting profiles, bindings, profile names, and the active profile are per character.
+Open the options with `/notcell opt` or `/notcell options`. Configure appearance, layouts, click-casting, and indicators. Click-casting profiles are saved per character; other settings are shared across the account.
 
 ## Credits
 
-- The original **Cell** addon and its contributors, including enderneko.
-- Vanilla backport and OctoWoW adaptation: **amusjn**.
-- Bundled **HealComm-1.0** and its Ace2 support libraries; **LibStub** and **CallbackHandler**.
-- **ClassicAPI** client extension and **SuperWoW** are maintained separately.
+- [Cell](https://github.com/enderneko/Cell) and its original author and contributors.
+- The [Cell 3.3.5 backport](https://github.com/Keoo88/Cell-3.3.5-backport).
+- [pfUI-CustomMedia](https://github.com/mr-rosh/pfUI-CustomMedia) for additional fonts and status bar textures.
+- [ClassicAPI](https://github.com/brues-code/ClassicAPI), [SuperWoW](https://github.com/balakethelock/SuperWoW), and the bundled HealComm library.
 
 ## License
 
-License: **to be confirmed**. Please check the original Cell project and bundled library licenses before redistribution or modification.
-
-## Screenshots
-
-Screenshots will be added here.
+NotCell is distributed under the MIT License. See [LICENSE](LICENSE).

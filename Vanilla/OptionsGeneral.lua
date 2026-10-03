@@ -28,13 +28,13 @@ Cell.OptionPageBuilders.general = function(context)
 	local aboutIntro = aboutPage:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	aboutIntro:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 10, -42)
 	aboutIntro:SetWidth(390); aboutIntro:SetHeight(54); aboutIntro:SetJustifyH("LEFT"); aboutTextBlocks[#aboutTextBlocks+1]=aboutIntro
-	aboutIntro:SetText("Version 1.0.0  |  Vanilla backport by amusjn\nOriginal Cell contributors, including enderneko\nWoW 1.12.1 / OctoWoW 1.18.1; ClassicAPI required.")
+	aboutIntro:SetText("A party and raid unit-frame for World of Warcraft 1.12. ClassicAPI is required.\nVersion 1.0.0  |  Created by amusjn\nBackported from Cell 3.3.5; inspired by Cell and its original author enderneko.")
 	AddSectionTitle(aboutPage, "Features", 10, -108)
 	AddOptionsDivider(aboutPage, -130)
 	local aboutFeatures = aboutPage:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	aboutFeatures:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 14, -134)
 	aboutFeatures:SetWidth(390); aboutFeatures:SetHeight(108); aboutFeatures:SetJustifyH("LEFT"); aboutTextBlocks[#aboutTextBlocks+1]=aboutFeatures
-	aboutFeatures:SetText("- Party and raid frames with layout switching\n- Text, aura, role, ready-check, and raid indicators\n- Click-casting on NotCell and Blizzard frames\n- HealComm-1.0 incoming-heal prediction\n- First-run setup, live previews, and import/export")
+	aboutFeatures:SetText("- Solo, party, and raid frames with automatic layout switching\n- Click-casting for NotCell and Blizzard frames\n- Incoming-heal prediction through bundled HealComm\n- Configurable indicators and debuff styles\n- Live previews, group filters, and settings import/export")
 	AddSectionTitle(aboutPage, "Getting started", 10, -264)
 	AddOptionsDivider(aboutPage, -286)
 	local aboutGettingStarted = aboutPage:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -129,3 +129,7 @@ Cell.OptionPageBuilders.general = function(context)
 	generalPage:SetScript("OnSizeChanged",function() if panel.UpdateGeneralResponsiveWidth then panel.UpdateGeneralResponsiveWidth() end end)
 	panel.UpdateGeneralResponsiveWidth()
 end
+
+
+
+
