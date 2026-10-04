@@ -20,31 +20,64 @@ Cell.OptionPageBuilders.general = function(context)
 	local generalPage = context.pages.generalSettings
 	local aboutPage = context.pages.about
 
-	local aboutHeader = aboutPage:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	local aboutHeader = aboutPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalLarge")
 	aboutHeader:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 10, -14)
 	aboutHeader:SetText("NotCell")
 	aboutHeader:SetTextColor(GetUIAccentColor())
 	RegisterAccentRefresher(function() aboutHeader:SetTextColor(GetUIAccentColor()) end)
-	local aboutIntro = aboutPage:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	local aboutIntro = aboutPage:CreateFontString(nil, "OVERLAY", "NotCellFontHighlight")
 	aboutIntro:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 10, -42)
-	aboutIntro:SetWidth(390); aboutIntro:SetHeight(54); aboutIntro:SetJustifyH("LEFT"); aboutTextBlocks[#aboutTextBlocks+1]=aboutIntro
-	aboutIntro:SetText("A party and raid unit-frame for World of Warcraft 1.12. ClassicAPI is required.\nVersion 1.0.0  |  Created by amusjn\nBackported from Cell 3.3.5; inspired by Cell and its original author enderneko.")
-	AddSectionTitle(aboutPage, "Features", 10, -108)
-	AddOptionsDivider(aboutPage, -130)
-	local aboutFeatures = aboutPage:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	aboutFeatures:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 14, -134)
+	aboutIntro:SetWidth(390); aboutIntro:SetHeight(50); aboutIntro:SetJustifyH("LEFT"); aboutTextBlocks[#aboutTextBlocks+1]=aboutIntro
+	aboutIntro:SetText("NotCell: Party and Raid Unit-frames\nModular party and raid unit-frames for World of Warcraft 1.12 / 1.18")
+	local aboutGitHub = CreateFrame("Button", nil, aboutPage)
+	aboutGitHub:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 10, -94)
+	aboutGitHub:SetWidth(390); aboutGitHub:SetHeight(22)
+	local githubIcon = aboutGitHub:CreateTexture(nil, "ARTWORK")
+	githubIcon:SetTexture("Interface\\AddOns\\NotCell\\Media\\Links\\github.tga")
+	githubIcon:SetWidth(16); githubIcon:SetHeight(16); githubIcon:SetPoint("LEFT", aboutGitHub, "LEFT", 0, 0)
+	local githubLabel = aboutGitHub:CreateFontString(nil, "OVERLAY", "NotCellFontHighlight")
+	githubLabel:SetPoint("LEFT", githubIcon, "RIGHT", 5, 0)
+	githubLabel:SetText("GitHub: amusjn/NotCell  ·  Version 1.2.0")
+	githubLabel:SetTextColor(.35, .68, 1)
+	aboutGitHub:SetScript("OnClick", function()
+		local url = "https://github.com/amusjn/NotCell"
+		local dialog = _G.NotCellGitHubLinkDialog
+		if not dialog then
+			dialog = CreateFrame("Frame", "NotCellGitHubLinkDialog", UIParent)
+			dialog:SetWidth(420); dialog:SetHeight(126); dialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+			dialog:SetFrameStrata("DIALOG"); dialog:SetFrameLevel(220); dialog:SetMovable(true); dialog:SetClampedToScreen(true)
+			dialog:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=12,insets={left=4,right=4,top=4,bottom=4}})
+			dialog:SetBackdropColor(.035,.035,.035,.98)
+			dialog.title = dialog:CreateFontString(nil, "OVERLAY", "NotCellFontNormal")
+			dialog.title:SetPoint("TOPLEFT", dialog, "TOPLEFT", 14, -12); dialog.title:SetText("NotCell on GitHub")
+			dialog.editBox = CreateFrame("EditBox", nil, dialog)
+			dialog.editBox:SetPoint("TOPLEFT", dialog, "TOPLEFT", 14, -42); dialog.editBox:SetWidth(392); dialog.editBox:SetHeight(26)
+			dialog.editBox:SetAutoFocus(false); dialog.editBox:SetFontObject(NotCellFontNormalSmall); dialog.editBox:SetTextInsets(6,6,2,2)
+			dialog.editBox:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=8,insets={left=2,right=2,top=2,bottom=2}})
+			dialog.editBox:SetBackdropColor(.02,.02,.02,1)
+			dialog.okButton = AddOptionsButton(dialog, "OK", 14, -78, 392, function() dialog:Hide() end)
+			dialog.editBox:SetScript("OnEscapePressed", function() dialog:Hide() end)
+			if UISpecialFrames then table.insert(UISpecialFrames, "NotCellGitHubLinkDialog") end
+		end
+		dialog.editBox:SetText(url); dialog:Show(); dialog.editBox:SetFocus(); dialog.editBox:HighlightText()
+	end)
+	aboutTextBlocks[#aboutTextBlocks+1]=aboutGitHub
+	AddSectionTitle(aboutPage, "Features", 10, -130)
+	AddOptionsDivider(aboutPage, -152)
+	local aboutFeatures = aboutPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormal")
+	aboutFeatures:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 14, -156)
 	aboutFeatures:SetWidth(390); aboutFeatures:SetHeight(108); aboutFeatures:SetJustifyH("LEFT"); aboutTextBlocks[#aboutTextBlocks+1]=aboutFeatures
-	aboutFeatures:SetText("- Solo, party, and raid frames with automatic layout switching\n- Click-casting for NotCell and Blizzard frames\n- Incoming-heal prediction through bundled HealComm\n- Configurable indicators and debuff styles\n- Live previews, group filters, and settings import/export")
-	AddSectionTitle(aboutPage, "Getting started", 10, -264)
-	AddOptionsDivider(aboutPage, -286)
-	local aboutGettingStarted = aboutPage:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	aboutGettingStarted:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 14, -290)
+	aboutFeatures:SetText("- Solo, party, and raid frames with automatic layout switching\n- Click-casting for NotCell and Blizzard frames\n- Incoming-heal prediction through bundled HealComm\n- Configurable indicators and debuff styles\n- Live previews, group filters, and settings import/export\nBackported from Cell 3.3.5a; inspired by Cell by enderneko.")
+	AddSectionTitle(aboutPage, "Getting started", 10, -286)
+	AddOptionsDivider(aboutPage, -308)
+	local aboutGettingStarted = aboutPage:CreateFontString(nil, "OVERLAY", "NotCellFontHighlight")
+	aboutGettingStarted:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 14, -312)
 	aboutGettingStarted:SetWidth(390); aboutGettingStarted:SetHeight(44); aboutGettingStarted:SetJustifyH("LEFT"); aboutTextBlocks[#aboutTextBlocks+1]=aboutGettingStarted
 	aboutGettingStarted:SetText("Open options with /notcell opt and setup with /notcell setup. Drag the red frame handle to reposition unitframes.")
-	AddSectionTitle(aboutPage, "Tip", 10, -354)
-	AddOptionsDivider(aboutPage, -376)
-	local aboutTip = aboutPage:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	aboutTip:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 14, -380)
+	AddSectionTitle(aboutPage, "Tip", 10, -376)
+	AddOptionsDivider(aboutPage, -398)
+	local aboutTip = aboutPage:CreateFontString(nil, "OVERLAY", "NotCellFontHighlight")
+	aboutTip:SetPoint("TOPLEFT", aboutPage, "TOPLEFT", 14, -402)
 	aboutTip:SetWidth(390); aboutTip:SetHeight(38); aboutTip:SetJustifyH("LEFT"); aboutTextBlocks[#aboutTextBlocks+1]=aboutTip
 	local tips = {
 		"Use separate layouts for solo, party, and raid groups.",
@@ -58,7 +91,7 @@ Cell.OptionPageBuilders.general = function(context)
 		for _, block in ipairs(aboutTextBlocks) do block:SetWidth(math.max(1,width-20)) end
 	end
 	panel.aboutText = aboutFeatures
-	if SetPageContentExtent then SetPageContentExtent("about", 418) end
+	if SetPageContentExtent then SetPageContentExtent("about", 440) end
 
 	local generalY = {visibility = -10, visibilityDivider = -32, visibilityControls = -46,
 		tooltips = -84, tooltipsDivider = -106, tooltipControls = -120,
@@ -129,6 +162,8 @@ Cell.OptionPageBuilders.general = function(context)
 	generalPage:SetScript("OnSizeChanged",function() if panel.UpdateGeneralResponsiveWidth then panel.UpdateGeneralResponsiveWidth() end end)
 	panel.UpdateGeneralResponsiveWidth()
 end
+
+
 
 
 

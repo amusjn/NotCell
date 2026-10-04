@@ -6,7 +6,9 @@
 
 # NotCell
 
-A party and raid unit-frame for World of Warcraft 1.12 — **ClassicAPI is required.**
+A party and raid unit-frame for World of Warcraft 1.12. **ClassicAPI, SuperWoW, and UnitXP3 are required for the supported 1.18.1 client environment.**
+
+**Current release: 1.2.0** · Built for 1.12.1 / 1.18.1 clients using ClassicAPI, SuperWoW, and UnitXP3.
 
 Originally backported from [Cell 3.3.5 backport](https://github.com/Keoo88/Cell-3.3.5-backport). Credits to the original [Cell](https://github.com/enderneko/Cell) author and contributors. NotCell was heavily inspired by Cell.
 
@@ -19,12 +21,14 @@ Originally backported from [Cell 3.3.5 backport](https://github.com/Keoo88/Cell-
 - Click-casting for NotCell and Blizzard unit frames, configured in NotCell options, with keyboard and mouse binds.
   - Keep click-casting profiles specific to each character.
 - Incoming-heal prediction powered by bundled HealComm.
-- Choose how debuffs appear on your frames.
-- Additional fonts and status bar textures from [pfUI-CustomMedia](https://github.com/mr-rosh/pfUI-CustomMedia).
-- Adjust frame size, health and power bar orientation, and bar placement.
-- See settings changes immediately in the live preview frame.
-- Use the Group Filter to preview party and raid layouts without joining a group.
-- Export and import NotCell settings.
+- Buff, debuff, missing-buff, and healer indicators, with modular placement and debuff styles including Border Glow, Solid Tint, and Gradient.
+- Choose keyboard and mouse click-casting binds for NotCell or Blizzard frames. Profiles are saved per character.
+- Adjust frame size, health and power bar orientation and placement, textures, fonts, and out-of-range fading.
+- Reposition frames with the draggable frame handle.
+- Preview font and texture choices, settings changes, and a selected indicator in real time.
+- Use the draggable Group Filter to preview Party and Raid layouts without joining a group.
+- Start with the guided setup wizard, then export or import NotCell settings when needed.
+- Use automatic layout switching between solo, party, and raid.
 
 ## Installation
 

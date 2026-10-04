@@ -56,7 +56,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 			v.anchorInitialized=true
 		end
 		v.x=tonumber(v.x) or 0; v.y=tonumber(v.y) or 0
-		v.font=tonumber(v.font) or 1; v.outline=tonumber(v.outline) or 2
+		v.font=tonumber(v.font) or Cell.defaultFontIndex or 1; v.outline=tonumber(v.outline) or 2
 		v.size=tonumber(v.size) or (kind=="text" and (key=="nameText" and 14 or 10) or 16)
 		v.iconSize=tonumber(v.iconSize) or 16; v.maxIcons=tonumber(v.maxIcons) or (key=="missingBuffs" and 3 or (key=="healerBuffs" and 5 or 4)); v.rows=tonumber(v.rows) or 1
 		-- Keep the saved `orientation` key for existing layout profiles; the UI
@@ -78,7 +78,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 			v.filterModeInitialized=true
 		end
 		v.filterMode=v.filterMode or "blacklist"
-		if v.colorMode==nil then v.colorMode="class" end
+		if v.colorMode==nil then v.colorMode=key=="powerText" and "power" or "class" end
 		if v.colorMode=="inherit" then v.colorMode="class" end
 	end
 	for _,layoutKey in ipairs(layoutNames) do
@@ -114,7 +114,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 	local settingsControlWidth = settingsWidth - 24
 	local sectionHeight = 442
 	local listViewportHeight = 352
-	local title=page:CreateFontString(nil,"OVERLAY","GameFontNormal")
+	local title=page:CreateFontString(nil,"OVERLAY","NotCellFontNormal")
 	title:SetPoint("TOPLEFT",page,"TOPLEFT",settingsX,-30); title:SetText("Indicator Settings"); title:SetTextColor(GetUIAccentColor())
 	RegisterAccentRefresher(function() title:SetTextColor(GetUIAccentColor()) end)
 	AddTitle(page,"Layout",10,-30)
@@ -177,7 +177,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 		local rowIndex, rowKey = i, item.key
 		local row=CreateFrame("Button",nil,leftChild); row:SetWidth(146); row:SetHeight(26); row:SetPoint("TOPLEFT",leftChild,"TOPLEFT",0,-(i-1)*32); row:EnableMouse(true)
 		row.background=row:CreateTexture(nil,"BACKGROUND"); row.background:SetAllPoints(row); row.background:SetTexture("Interface\\Buttons\\WHITE8X8")
-		row.label=row:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); row.label:SetPoint("LEFT",row,"LEFT",5,0); row.label:SetJustifyH("LEFT"); row.label:SetText(item.name)
+		row.label=row:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); row.label:SetPoint("LEFT",row,"LEFT",5,0); row.label:SetJustifyH("LEFT"); row.label:SetText(item.name)
 		row:SetScript("OnClick",function()
 			selectedItem=rowIndex; selectedKey=rowKey; Cell.selectedIndicatorKey=rowKey
 			if panel.RefreshIndicatorSettings then panel.RefreshIndicatorSettings() end
@@ -196,7 +196,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 	panel.indicatorY,panel.indicatorYValue=AddSlider(content,"Y offset",0,y,settingsControlWidth,-100,100,1,0,function(v) values().y=v; values().anchorInitialized=true; save() end); y=y-sliderPitch
 	panel.indicatorXBaseY=panel.indicatorX.optionY; panel.indicatorYBaseY=panel.indicatorY.optionY
 	panel.textAppearanceTitle=AddTitle(content,"Text appearance",0,y); y=y-24
-	panel.indicatorFont=AddDropdown(content,settingsControlWidth,0,y,function() local f=fonts[values().font or 1] or fonts[1]; return "Font: "..(f and f.name or "Friz Quadrata") end,fonts,function(v) values().font=v; save(); panel.RefreshIndicatorSettings() end); y=y-36
+	panel.indicatorFont=AddDropdown(content,settingsControlWidth,0,y,function() local f=fonts[values().font or Cell.defaultFontIndex or 1] or fonts[1]; return "Font: "..(f and f.name or "Friz Quadrata") end,fonts,function(v) values().font=v; save(); panel.RefreshIndicatorSettings() end); y=y-36
 	panel.indicatorSize,panel.indicatorSizeValue=AddSlider(content,"Font size",0,y,settingsControlWidth,6,48,1,12,function(v) values().size=v; values().iconSize=v; save() end); panel.indicatorTextSizeY=y; y=y-sliderPitch
 	panel.indicatorOutline=AddDropdown(content,settingsControlWidth,0,y,function() local o=outlines[values().outline or 2] or outlines[2]; return "Outline: "..o.name end,outlines,function(v) values().outline=v; save(); panel.RefreshIndicatorSettings() end); y=y-36
 	local colorLabels={nameText="Name color",healthText="Health color",powerText="Power color",statusText="Status color"}
@@ -256,7 +256,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 		panel.RefreshIndicatorSettings()
 	end)
 	panel.debuffAlpha,panel.debuffAlphaValue=AddSlider(auraControls,"Effect alpha",0,0,settingsControlWidth,0,100,5,65,function(v) Cell.debuffFillAlpha=v; saveDebuffVisual("debuffFillAlpha",v) end)
-	panel.debuffCoverage,panel.debuffCoverageValue=AddSlider(auraControls,"Gradient coverage",0,0,settingsControlWidth,10,100,5,50,function(v) Cell.debuffFillAmount=v; saveDebuffVisual("debuffFillAmount",v) end)
+	panel.debuffCoverage,panel.debuffCoverageValue=AddSlider(auraControls,"Gradient coverage",0,0,settingsControlWidth,10,100,5,100,function(v) Cell.debuffFillAmount=v; saveDebuffVisual("debuffFillAmount",v) end)
 	panel.debuffDirection=AddDropdown(auraControls,settingsControlWidth,0,0,function()
 		local labels={ ["left-to-right"]="Right",["right-to-left"]="Left",["down-to-up"]="Up",["up-to-down"]="Down" }
 		return "Gradient growth: "..(labels[Cell.debuffFillDirection] or "Right")
@@ -264,7 +264,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 	panel.missingKnown=AddCheckbox(auraControls,"Only show buffs I have learned",0,y,settingsControlWidth,function() local v=values(); v.onlyKnown=not v.onlyKnown; save(); panel.RefreshIndicatorSettings() end); y=y-30
 	panel.missingClass=AddCheckbox(auraControls,"Only show buffs for my class",0,y,settingsControlWidth,function() local v=values(); v.onlyCurrentClass=not v.onlyCurrentClass; save(); panel.RefreshIndicatorSettings() end); y=y-34
 	local spellInputY=y
-	local spellEdit=CreateFrame("EditBox",nil,auraControls); spellEdit:SetWidth(settingsControlWidth-70); spellEdit:SetHeight(22); spellEdit:SetPoint("TOPLEFT",auraControls,"TOPLEFT",0,y); spellEdit:SetAutoFocus(false); spellEdit:SetFontObject(GameFontNormalSmall); spellEdit:SetTextInsets(4,4,2,2); spellEdit:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=8,insets={left=2,right=2,top=2,bottom=2}}); spellEdit:SetBackdropColor(.05,.05,.05,1); spellEdit:SetText("Spell name or ID"); spellEdit:SetTextColor(.65,.65,.65); panel.indicatorSpellEdit=spellEdit
+	local spellEdit=CreateFrame("EditBox",nil,auraControls); spellEdit:SetWidth(settingsControlWidth-70); spellEdit:SetHeight(22); spellEdit:SetPoint("TOPLEFT",auraControls,"TOPLEFT",0,y); spellEdit:SetAutoFocus(false); spellEdit:SetFontObject(NotCellFontNormalSmall); spellEdit:SetTextInsets(4,4,2,2); spellEdit:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=8,insets={left=2,right=2,top=2,bottom=2}}); spellEdit:SetBackdropColor(.05,.05,.05,1); spellEdit:SetText("Spell name or ID"); spellEdit:SetTextColor(.65,.65,.65); panel.indicatorSpellEdit=spellEdit
 	spellEdit:SetScript("OnEditFocusGained",function(self) if self:GetText()=="Spell name or ID" then self:SetText(""); self:SetTextColor(1,1,1) end end)
 	spellEdit:SetScript("OnEditFocusLost",function(self) if self:GetText()=="" then self:SetText("Spell name or ID"); self:SetTextColor(.65,.65,.65) end end)
 	panel.indicatorSpellAdd=AddButton(auraControls,"Add spell",settingsControlWidth-63,y,63,function()
@@ -278,7 +278,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 	local function CreateSpellRow(i)
 		local row=CreateFrame("Button",nil,auraControls); row:SetPoint("TOPLEFT",auraControls,"TOPLEFT",0,y-(i-1)*18); row:SetWidth(settingsControlWidth-28); row:SetHeight(17)
 		row.icon=row:CreateTexture(nil,"ARTWORK"); row.icon:SetWidth(18); row.icon:SetHeight(18); row.icon:SetPoint("LEFT",row,"LEFT",0,0)
-		row.label=row:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); row.label:SetPoint("LEFT",row.icon,"RIGHT",4,0); row.label:SetWidth(settingsControlWidth-54); row.label:SetJustifyH("LEFT")
+		row.label=row:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); row.label:SetPoint("LEFT",row.icon,"RIGHT",4,0); row.label:SetWidth(settingsControlWidth-54); row.label:SetJustifyH("LEFT")
 		panel.indicatorSpellRows[i]=row
 		local remove=AddButton(auraControls,"X",settingsControlWidth-24,y-(i-1)*18,24,function() local v=values(); if row.spellIndex then table.remove(v.spells,row.spellIndex); panel.RefreshIndicatorSettings(); save() end end)
 		remove:SetHeight(17); row.removeButton=remove
@@ -286,11 +286,12 @@ Cell.OptionPageBuilders.indicators = function(context)
 	for i=1,20 do CreateSpellRow(i) end
 	local preview=CreateFrame("Frame",nil,panel)
 	preview:SetFrameStrata("DIALOG"); preview:SetWidth(160); preview:SetHeight(60); preview:SetClampedToScreen(true); preview:Hide()
-	preview.title=preview:CreateFontString(nil,"OVERLAY","GameFontNormal"); preview.title:SetPoint("BOTTOMLEFT",preview,"TOPLEFT",0,4); preview.title:SetText("Preview"); preview.title:SetFont(GameFontNormal:GetFont(),18,"THICKOUTLINE"); preview.title:SetTextColor(GetUIAccentColor()); RegisterAccentRefresher(function() preview.title:SetTextColor(GetUIAccentColor()) end)
+	preview.title=preview:CreateFontString(nil,"OVERLAY","NotCellFontNormal"); preview.title:SetPoint("BOTTOMLEFT",preview,"TOPLEFT",0,4); preview.title:SetText("Preview"); preview.title:SetFont(NotCellFontNormal:GetFont(),18,"THICKOUTLINE"); preview.title:SetTextColor(GetUIAccentColor()); RegisterAccentRefresher(function() preview.title:SetTextColor(GetUIAccentColor()) end)
 	preview.background=preview:CreateTexture(nil,"BACKGROUND"); preview.background:SetAllPoints(preview); preview.background:SetTexture(.08,.08,.08,.95)
-	preview.healthLoss=preview:CreateTexture(nil,"BACKGROUND"); preview.healthLoss:SetTexture(.62,.08,.08,.95)
 	preview.health=CreateFrame("StatusBar",nil,preview); preview.health:SetPoint("TOPLEFT",preview,"TOPLEFT",2,-2); preview.health:SetPoint("BOTTOMRIGHT",preview,"BOTTOMRIGHT",-2,(Cell.powerBarHeight or 4)+4); preview.health:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8"); preview.health:SetStatusBarColor(.25,.55,.25,1); preview.health:SetMinMaxValues(0,1); preview.health:SetValue(.72)
-	preview.healthLoss:SetPoint("TOPLEFT",preview.health,"TOPLEFT",0,0); preview.healthLoss:SetPoint("BOTTOMRIGHT",preview.health,"BOTTOMRIGHT",0,0)
+	-- Keep the loss region on the same status bar and draw layer as live frames;
+	-- a sibling behind the bar is covered by the status bar's unfilled area.
+	preview.healthLoss=preview.health:CreateTexture(nil,"BACKGROUND"); preview.healthLoss:SetAllPoints(preview.health); preview.healthLoss:SetTexture(.62,.08,.08,.95)
 	preview.power=CreateFrame("StatusBar",nil,preview); preview.power:SetPoint("BOTTOMLEFT",preview,"BOTTOMLEFT",2,2); preview.power:SetPoint("BOTTOMRIGHT",preview,"BOTTOMRIGHT",-2,2); preview.power:SetHeight(Cell.powerBarHeight or 4); preview.power:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8"); preview.power:SetStatusBarColor(.2,.35,.85,1); preview.power:SetMinMaxValues(0,1); preview.power:SetValue(.6)
 	preview.indicatorOverlay=CreateFrame("Frame",nil,preview); preview.indicatorOverlay:SetAllPoints(preview); preview.indicatorOverlay:SetFrameLevel(math.max(preview.health:GetFrameLevel(),preview.power:GetFrameLevel())+10)
 	preview.debuffSegments={}
@@ -306,10 +307,10 @@ Cell.OptionPageBuilders.indicators = function(context)
 	preview.debuffBorder:SetBackdropColor(0,0,0,0)
 	preview.debuffBorder:Hide()
 	preview.damageFlash=preview.indicatorOverlay:CreateTexture(nil,"OVERLAY"); preview.damageFlash:SetTexture("Interface\\Buttons\\WHITE8X8"); preview.damageFlash:SetVertexColor(1,1,1,1); preview.damageFlash:SetAlpha(0); preview.damageFlash:Hide()
-	preview.name=preview.indicatorOverlay:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); preview.name:SetText("Sample Player"); preview.name:SetTextColor(.25,.65,1)
-	preview.healthText=preview.indicatorOverlay:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); preview.healthText:SetText("72%")
-	preview.status=preview.indicatorOverlay:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); preview.status:SetText(""); preview.status:Hide()
-	preview.powerText=preview.indicatorOverlay:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); preview.powerText:SetText("60%")
+	preview.name=preview.indicatorOverlay:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); preview.name:SetText("Sample Player"); preview.name:SetTextColor(.25,.65,1)
+	preview.healthText=preview.indicatorOverlay:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); preview.healthText:SetText("72%")
+	preview.status=preview.indicatorOverlay:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); preview.status:SetText(""); preview.status:Hide()
+	preview.powerText=preview.indicatorOverlay:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); preview.powerText:SetText("60%")
 	preview.auraIcons={buffs={},debuffs={},missingBuffs={},healerBuffs={}}
 	preview.missingBuffGlow={}
 	local previewClass
@@ -350,8 +351,8 @@ Cell.OptionPageBuilders.indicators = function(context)
 		or (type(NotCellDB) == "table" and type(NotCellDB.CellVanillaPreview) == "table" and NotCellDB.CellVanillaPreview)
 	local previewOnlySelected = previewSettings and previewSettings.previewOnlySelectedIndicator == true or false
 	local debuffTestTypes = {
-		{name="Disease", color={0.60,0.40,0.00}}, {name="Poison", color={0.00,0.60,0.00}},
-		{name="Magic", color={0.20,0.60,1.00}}, {name="Curse", color={0.60,0.00,1.00}},
+		{name="Disease", color={0.60,0.40,0.00}, icon="Interface\\Icons\\Spell_Shadow_CurseOfMannoroth"}, {name="Poison", color={0.00,0.60,0.00}, icon="Interface\\Icons\\Ability_Poisons"},
+		{name="Magic", color={0.20,0.60,1.00}, icon="Interface\\Icons\\Spell_Frost_FrostNova"}, {name="Curse", color={0.60,0.00,1.00}, icon="Interface\\Icons\\Spell_Shadow_CurseOfSargeras"},
 	}
 	local debuffTestIndex=0
 	local function ApplyPreviewDebuffTest()
@@ -363,12 +364,14 @@ Cell.OptionPageBuilders.indicators = function(context)
 		if not sample then return end
 		preview.debuffBorder:Hide()
 		for i=1,table.getn(preview.debuffSegments) do preview.debuffSegments[i]:Hide() end
-		-- The test isolates the visual effect; suppress the configured Debuffs
-		-- aura icons while it is active so no spell icon obscures the sample.
-		for _,icon in ipairs(preview.auraIcons.debuffs) do icon:Hide() end
+
 		-- The visual test follows the indicator's master Enabled switch just like
 		-- live frames; Show debuff icons only controls icons, not these effects.
 		if debuffSettings.enabled == false then return end
+		if Cell.showDebuffIcons then
+			local testIcon=preview.auraIcons.debuffs[1]
+			if testIcon and sample.icon then testIcon:SetTexture(sample.icon); testIcon:SetAlpha(1); testIcon:Show() end
+		end
 		local mode=Cell.debuffFillMode or "none"
 		if mode=="none" and Cell.debuffBorderEnabled then mode="border" end
 		if mode=="border" then
@@ -378,7 +381,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 			preview.health:SetStatusBarColor(sample.color[1],sample.color[2],sample.color[3],1)
 		elseif mode=="gradient" then
 			local width,height=preview.health:GetWidth(),preview.health:GetHeight()
-			local fraction=math.max(.10,math.min(1,(tonumber(Cell.debuffFillAmount) or 50)/100))
+			local fraction=math.max(.10,math.min(1,(tonumber(Cell.debuffFillAmount) or 100)/100))
 			local vertical=Cell.debuffFillDirection=="down-to-up" or Cell.debuffFillDirection=="up-to-down"
 			local extent=vertical and height*fraction or width*fraction
 			local segmentExtent=extent/table.getn(preview.debuffSegments)
@@ -404,9 +407,9 @@ Cell.OptionPageBuilders.indicators = function(context)
 		preview.debuffTesting=nil
 		preview.debuffBorder:Hide()
 		for i=1,table.getn(preview.debuffSegments) do preview.debuffSegments[i]:Hide() end
-		if debuffTestButton then debuffTestButton:SetText("Test debuff") end
+		if debuffTestButton then debuffTestButton:SetText("Test Debuffs") end
 		if refreshPreview and panel.UpdateIndicatorPreview then panel.UpdateIndicatorPreview()
-		elseif Cell.ApplyPreviewAppearance then Cell:ApplyPreviewAppearance(preview) end
+		elseif Cell.ApplyPreviewAppearance then Cell:ApplyPreviewAppearance(preview); ApplyPreviewDebuffTest() end
 	end
 	local function UpdatePreviewHealthText()
 		local p=Cell.groupLayoutProfiles[panel.indicatorLayoutKey or Cell.selectedGroupLayout] or {}; local settings=((p.indicators or {}).healthText or {})
@@ -475,7 +478,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 		preview.testing=nil; preview:SetScript("OnUpdate",nil)
 		if testButton then testButton:SetText("Test") end
 		preview.damageFlash:Hide(); preview.damageFlashRemaining=nil
-		if resetHealth then preview.health:SetValue(.72); if panel.UpdateIndicatorPreview then panel.UpdateIndicatorPreview() end; if Cell.ApplyPreviewAppearance then Cell:ApplyPreviewAppearance(preview) end end
+		if resetHealth then preview.health:SetValue(.72); if panel.UpdateIndicatorPreview then panel.UpdateIndicatorPreview() end; if Cell.ApplyPreviewAppearance then Cell:ApplyPreviewAppearance(preview) end; ApplyPreviewDebuffTest() end
 	end
 	testButton=AddButton(preview,"Test",0,-68,82,function()
 		if preview.testing then StopPreviewTest(false); return end
@@ -500,7 +503,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 					else
 						if mode=="flash" then ShowPreviewDamage(current,target) else ShowPreviewDamage(target,target) end
 						self.health:SetValue(target); self.testWait=math.random(8,20)/10
-						UpdatePreviewHealthText(); if panel.UpdateIndicatorPreview then panel.UpdateIndicatorPreview() end; if Cell.ApplyPreviewAppearance then Cell:ApplyPreviewAppearance(self) end
+						UpdatePreviewHealthText(); if panel.UpdateIndicatorPreview then panel.UpdateIndicatorPreview() end; if Cell.ApplyPreviewAppearance then Cell:ApplyPreviewAppearance(self) end; ApplyPreviewDebuffTest()
 					end
 				end
 			else
@@ -510,11 +513,12 @@ Cell.OptionPageBuilders.indicators = function(context)
 				self.health:SetValue(current)
 				UpdatePreviewHealthText(); if panel.UpdateIndicatorPreview then panel.UpdateIndicatorPreview() end
 				if Cell.ApplyPreviewAppearance then Cell:ApplyPreviewAppearance(self) end
+				ApplyPreviewDebuffTest()
 				if progress>=1 then self.health:SetValue(self.testTarget); UpdatePreviewHealthText(); self.testTarget=nil; self.testWait=math.random(8,20)/10 end
 			end
 		end)
 	end)
-	debuffTestButton=AddButton(preview,"Test debuff",0,-68,105,function()
+	debuffTestButton=AddButton(preview,"Test Debuffs",0,-68,105,function()
 		if preview.debuffTesting then
 			StopPreviewDebuffTest(true)
 			return
@@ -578,8 +582,8 @@ Cell.OptionPageBuilders.indicators = function(context)
 		local function place(fontString,settings,relative,defaultAnchor,forcedAnchor)
 			fontString:ClearAllPoints(); local anchor=forcedAnchor or settings.anchor or defaultAnchor; fontString:SetPoint(anchor,relative,anchor,tonumber(settings.x) or 0,tonumber(settings.y) or 0)
 			local outline=tonumber(settings.outline) or 2; local flags=outline==1 and "" or (outline==3 and "THICKOUTLINE" or "OUTLINE")
-			local font=(Cell.indicatorFonts or {})[tonumber(settings.font) or 1]
-			fontString:SetFont((font and font.path) or GameFontNormalSmall:GetFont(),tonumber(settings.size) or 12,flags); if settings.enabled==false then fontString:Hide() else fontString:Show() end
+			local font=(Cell.indicatorFonts or {})[tonumber(settings.font) or Cell.defaultFontIndex or 1]
+			fontString:SetFont((font and font.path) or NotCellFontNormalSmall:GetFont(),tonumber(settings.size) or 12,flags); if settings.enabled==false then fontString:Hide() else fontString:Show() end
 		end
 		place(preview.name,n,preview.health,"TOPLEFT"); place(preview.healthText,ht,preview,"RIGHT"); place(preview.powerText,pt,preview.power,"CENTER","CENTER"); place(preview.status,st,preview,"CENTER")
 		local function applyTextColor(fontString,settings,defaultColor,powerColor)
@@ -628,16 +632,14 @@ Cell.OptionPageBuilders.indicators = function(context)
 			for key,icon in pairs(preview.indicatorIcons) do setVisible(icon, key == selected) end
 			for auraType,icons in pairs(preview.auraIcons) do
 				for i,icon in ipairs(icons) do
-					local visible=auraType == selected and icon:IsShown()
+					local visible=(auraType == selected or (preview.debuffTesting and auraType=="debuffs" and Cell.showDebuffIcons)) and icon:IsShown()
 					setVisible(icon,visible)
 					if auraType=="missingBuffs" and preview.missingBuffGlow[i] then setVisible(preview.missingBuffGlow[i],visible) end
 				end
 			end
-			setVisible(preview.debuffBorder, selected == "debuffs" and preview.debuffBorder:IsShown())
-			for _,segment in ipairs(preview.debuffSegments) do setVisible(segment, selected == "debuffs" and segment:IsShown()) end
-			if selected ~= "debuffs" and preview.debuffTesting and Cell.debuffFillMode == "solid" and Cell.ApplyPreviewAppearance then
-				Cell:ApplyPreviewAppearance(preview)
-			end
+			setVisible(preview.debuffBorder, (selected == "debuffs" or preview.debuffTesting) and preview.debuffBorder:IsShown())
+			for _,segment in ipairs(preview.debuffSegments) do setVisible(segment, (selected == "debuffs" or preview.debuffTesting) and segment:IsShown()) end
+
 			-- The damage flash is part of the health-bar animation, not an indicator.
 			-- Keep it visible while filtering indicators so Flash mode remains testable.
 		end
@@ -745,7 +747,7 @@ Cell.OptionPageBuilders.indicators = function(context)
 		shownSlider(panel.debuffCoverage,isGradient)
 		shown(panel.debuffDirection,isGradient)
 		panel.syncingDebuffControls=true
-		panel.debuffAlpha:SetValue(tonumber(Cell.debuffFillAlpha) or 65); panel.debuffCoverage:SetValue(tonumber(Cell.debuffFillAmount) or 50)
+		panel.debuffAlpha:SetValue(tonumber(Cell.debuffFillAlpha) or 65); panel.debuffCoverage:SetValue(tonumber(Cell.debuffFillAmount) or 100)
 		panel.syncingDebuffControls=nil
 		panel.debuffDisplayMode:RefreshChoiceLabel(); panel.debuffDirection:RefreshChoiceLabel()
 		shown(panel.indicatorXValue,true); shown(panel.indicatorYValue,true)
@@ -789,3 +791,6 @@ Cell.OptionPageBuilders.indicators = function(context)
 	panel.UpdateIndicatorResponsiveWidth()
 	panel.RefreshIndicatorSettings()
 end
+
+
+

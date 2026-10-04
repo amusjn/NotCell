@@ -19,9 +19,12 @@ Cell.verticalGap = 4
 Cell.preview = false
 Cell.previewMode = nil
 Cell.previewLimit = nil
+-- Expressway is the tenth bundled font (after Blizzard's four standard fonts).
+-- Keep this early default available before the media/font list is built.
+Cell.defaultFontIndex = 10
 
 local partyPreviewUnits = {
-	{name = "Empi (You)", class = "PRIEST", health = 1.00, power = 0.82},
+	{name = "You", class = "PRIEST", health = 1.00, power = 0.82},
 	{name = "Thornkeeper", class = "WARRIOR", health = 0.74, power = 0.34},
 	{name = "Mosswhisper", class = "DRUID", health = 0.46, power = 0.63},
 	{name = "Brightspark", class = "MAGE", health = 0.91, power = 0.91},
@@ -167,10 +170,10 @@ local function LoadDebuffSettings(settings)
 	else
 		Cell.debuffBorderEnabled = Cell.debuffStyle == "border"
 	end
-	Cell.debuffFillAmount = math.max(10, math.min(100, tonumber(settings.debuffFillAmount) or 50))
+	Cell.debuffFillAmount = math.max(10, math.min(100, tonumber(settings.debuffFillAmount) or 100))
 	Cell.debuffFillAlpha = math.max(0, math.min(100, tonumber(settings.debuffFillAlpha) or 65))
 	local directions = {"left-to-right", "right-to-left", "down-to-up", "up-to-down"}
-	Cell.debuffFillDirection = settings.debuffFillDirection or directions[1]
+	Cell.debuffFillDirection = settings.debuffFillDirection or "up-to-down"
 	local directionValid = false
 	for i = 1, table.getn(directions) do if directions[i] == Cell.debuffFillDirection then directionValid = true end end
 	if not directionValid then Cell.debuffFillDirection = directions[1] end
@@ -198,7 +201,7 @@ local function NormalizeBarAnimationMode(mode, legacyDuration)
 	if mode == "none" or mode == "instant" then return "none"
 	elseif mode == "smooth" then return "smooth"
 	elseif mode == "flash" or mode == "shock" then return "flash" end
-	return tonumber(legacyDuration) == 0 and "none" or "smooth"
+	return legacyDuration == nil and "flash" or (tonumber(legacyDuration) == 0 and "none" or "smooth")
 end
 Cell.barAnimationMode = NormalizeBarAnimationMode(cellSettings.barAnimationMode, cellSettings.barAnimationDuration)
 Cell.targetHighlightColor = cellSettings.targetHighlightColor or {1, 0.68, 0.12}
@@ -225,12 +228,12 @@ Cell.tooltipsHideInCombat = cellSettings.tooltipsHideInCombat and true or false
 LoadDebuffSettings(cellSettings)
 Cell.nameColorMode = cellSettings.nameColorMode or "class"
 Cell.nameCustomColor = cellSettings.nameCustomColor or {1, 1, 1}
-Cell.nameFontIndex = cellSettings.nameFontIndex or 1
+Cell.nameFontIndex = cellSettings.nameFontIndex or Cell.defaultFontIndex or 1
 Cell.nameFontSize = cellSettings.nameFontSize or 14
 Cell.nameFontOutline = cellSettings.nameFontOutline or 2
 Cell.showHealthValues = cellSettings.showHealthValues ~= false
 Cell.healthValueFormat = cellSettings.healthValueFormat or "percent"
-Cell.healthTextFontIndex = cellSettings.healthTextFontIndex or 1
+Cell.healthTextFontIndex = cellSettings.healthTextFontIndex or Cell.defaultFontIndex or 1
 Cell.healthTextFontSize = cellSettings.healthTextFontSize or 10
 Cell.healthTextFontOutline = cellSettings.healthTextFontOutline or 2
 Cell.healthTextColorMode = cellSettings.healthTextColorMode or "custom"
@@ -238,10 +241,10 @@ Cell.healthTextCustomColor = cellSettings.healthTextCustomColor or {1, 1, 1}
 Cell.healthTextAnchor = cellSettings.healthTextAnchor or "BOTTOMRIGHT"
 Cell.showPowerValues = cellSettings.showPowerValues ~= false
 Cell.powerValueFormat = cellSettings.powerValueFormat or "percent"
-Cell.powerTextFontIndex = cellSettings.powerTextFontIndex or 1
+Cell.powerTextFontIndex = cellSettings.powerTextFontIndex or Cell.defaultFontIndex or 1
 Cell.powerTextFontSize = cellSettings.powerTextFontSize or 10
 Cell.powerTextFontOutline = cellSettings.powerTextFontOutline or 2
-Cell.powerTextColorMode = cellSettings.powerTextColorMode or "custom"
+Cell.powerTextColorMode = cellSettings.powerTextColorMode or "power"
 Cell.powerTextCustomColor = cellSettings.powerTextCustomColor or {1, 1, 1}
 Cell.powerTextAnchor = cellSettings.powerTextAnchor or "BOTTOM"
 Cell.nameAnchor = cellSettings.nameAnchor or "TOPLEFT"
@@ -256,10 +259,10 @@ Cell.clickCastProfileNames = type(characterClickSettings.vanillaClickCastProfile
 	 or (type(cellSettings.clickCastProfileNames) == "table" and cellSettings.clickCastProfileNames) or {}
 Cell.clickCastProfileNames.common = "Common"
 Cell.clickCastProfileNames[Cell.clickCastCharacterKey] = Cell.clickCastProfileNames[Cell.clickCastCharacterKey] or (UnitName and UnitName("player") or "This character")
-Cell.activeClickCastProfile = characterClickSettings.vanillaActiveClickCastProfile or cellSettings.activeClickCastProfile or "common"
+Cell.activeClickCastProfile = characterClickSettings.vanillaActiveClickCastProfile or cellSettings.activeClickCastProfile or Cell.clickCastCharacterKey
 if not Cell.clickCastProfiles[Cell.activeClickCastProfile] then Cell.activeClickCastProfile = "common" end
 Cell.clickCasts = Cell.clickCastProfiles[Cell.activeClickCastProfile]
-Cell.autoGroupLayouts = cellSettings.autoGroupLayouts and true or false
+Cell.autoGroupLayouts = cellSettings.autoGroupLayouts ~= false
 local legacyLayoutProfiles = type(cellSettings.groupLayoutProfiles) == "table" and cellSettings.groupLayoutProfiles or {}
 Cell.groupLayoutProfiles = type(cellSettings.layouts) == "table" and cellSettings.layouts or {}
 local builtInLayouts = {Default=true}
@@ -412,6 +415,51 @@ if sharedMedia then
 		end
 	end
 end
+Cell.defaultFontPath = "Interface\\AddOns\\NotCell\\Media\\Fonts\\Expressway.ttf"
+Cell.defaultFontIndex = 10
+for index, entry in ipairs(nameFonts) do if entry.name == "Expressway" then Cell.defaultFontIndex = index; break end end
+local function CreateNotCellFontObject(name, base)
+	local fontObject = CreateFont(name)
+	local _, size, flags = base:GetFont()
+	fontObject:SetFont(Cell.defaultFontPath, size, flags)
+	local red, green, blue = base:GetTextColor()
+	fontObject:SetTextColor(red, green, blue)
+	return fontObject
+end
+CreateNotCellFontObject("NotCellFontNormal", GameFontNormal)
+CreateNotCellFontObject("NotCellFontNormalSmall", GameFontNormalSmall)
+CreateNotCellFontObject("NotCellFontNormalLarge", GameFontNormalLarge)
+CreateNotCellFontObject("NotCellFontHighlight", GameFontHighlight)
+CreateNotCellFontObject("NotCellFontHighlightSmall", GameFontHighlightSmall)
+local function StyleNotCellTooltip(tooltip)
+	if not tooltip or not tooltip.GetName then return end
+	local prefix = tooltip:GetName()
+	if not prefix then return end
+	if not tooltip._notCellFontRestoreHook and tooltip.HookScript then
+		tooltip._notCellFontRestoreHook = true
+		tooltip._notCellOriginalFonts = {}
+		tooltip:HookScript("OnHide", function(frame)
+			for fontString, font in pairs(frame._notCellOriginalFonts or {}) do
+				fontString:SetFont(font[1], font[2], font[3])
+			end
+			frame._notCellOriginalFonts = {}
+		end)
+	end
+	tooltip._notCellOriginalFonts = tooltip._notCellOriginalFonts or {}
+	for i = 1, 60 do
+		for _, side in ipairs({"Left", "Right"}) do
+			local fontString = _G[prefix .. "Text" .. side .. i]
+			if fontString then
+				if not tooltip._notCellOriginalFonts[fontString] then
+					local path, size, flags = fontString:GetFont()
+					tooltip._notCellOriginalFonts[fontString] = {path, size, flags}
+				end
+				local _, size, flags = fontString:GetFont()
+				fontString:SetFont(Cell.defaultFontPath, size, flags)
+			end
+		end
+	end
+end
 local nameOutlines = {{name = "None", flag = ""}, {name = "Outline", flag = "OUTLINE"}, {name = "Thick", flag = "THICKOUTLINE"}}
 local fontSizes = {8, 9, 10, 11, 12, 13, 14, 16, 18, 20}
 local textAnchors = {
@@ -524,7 +572,7 @@ local function AddOptionsButton(parent, text, x, y, width, callback)
 		end
 		button.cellBorder[edge] = line
 	end
-	local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local label = button:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	label:SetPoint("CENTER", button, "CENTER", 0, 0)
 	button.cellLabel = label
 	function button:SetText(value) self.cellLabel:SetText(value or "") end
@@ -571,7 +619,7 @@ local function AddOptionsCheckbox(parent, text, x, y, width, callback, boxSize, 
 	check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check"); check:SetVertexColor(GetUIAccentColor())
 	local inset = boxSize > 14 and 2 or 1
 	check:SetPoint("TOPLEFT", box, "TOPLEFT", inset, -inset); check:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -inset, inset); check:Hide()
-	local label = button:CreateFontString(nil, "OVERLAY", fontObject or "GameFontNormalSmall")
+	local label = button:CreateFontString(nil, "OVERLAY", fontObject or "NotCellFontNormalSmall")
 	label:SetPoint("LEFT", box, "RIGHT", 6, 0); label:SetPoint("RIGHT", button, "RIGHT", 0, 0); label:SetJustifyH("LEFT"); label:SetText(text)
 	button.checkMark = check; button.label = label
 	function button:SetChecked(checked) self.checked = checked and true or false; if self.checked then self.checkMark:Show() else self.checkMark:Hide() end end
@@ -595,7 +643,7 @@ local function AddCategoryButton(parent, text, x, y, width, callback, categorySt
 	background:SetAllPoints(button)
 	background:SetTexture("Interface\\Buttons\\WHITE8X8")
 	button.categoryBackground = background
-	local label = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local label = button:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	label:SetPoint("CENTER", button, "CENTER", 0, 0)
 	label:SetText(text)
 	button.categoryLabel = label
@@ -659,12 +707,16 @@ local SLIDER_LAYOUT = {
 Cell.OptionsSliderLayout = SLIDER_LAYOUT
 
 local function AddOptionsSlider(parent, label, x, y, width, minValue, maxValue, step, value, callback)
-	local title = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local title = parent:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	title:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 	title:SetText(label)
-	local valueBox = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local valueBox = CreateFrame("EditBox", nil, parent)
+	valueBox:SetFontObject(NotCellFontNormalSmall)
 	valueBox:SetPoint("TOP", parent, "TOPLEFT", x + width / 2, y - SLIDER_LAYOUT.valueOffset)
 	valueBox:SetWidth(SLIDER_VALUE_BOX_STYLE.width); valueBox:SetHeight(SLIDER_VALUE_BOX_STYLE.height); valueBox:SetJustifyH("CENTER")
+	valueBox:SetTextInsets(0, 0, 0, 0)
+	valueBox:SetNumeric(true)
+	valueBox:SetAutoFocus(false)
 	local valueBackground = parent:CreateTexture(nil, "BACKGROUND")
 	valueBackground:SetTexture("Interface\\Buttons\\WHITE8X8"); valueBackground:SetPoint("TOPLEFT", valueBox, "TOPLEFT", -SLIDER_LAYOUT.valueBackgroundX, SLIDER_LAYOUT.valueBackgroundY); valueBackground:SetPoint("BOTTOMRIGHT", valueBox, "BOTTOMRIGHT", SLIDER_LAYOUT.valueBackgroundX, -SLIDER_LAYOUT.valueBackgroundY); valueBackground:SetVertexColor(unpack(SLIDER_VALUE_BOX_STYLE.background))
 	local valueBorder = {}
@@ -675,9 +727,9 @@ local function AddOptionsSlider(parent, label, x, y, width, minValue, maxValue, 
 		valueBorder[edge]=line
 	end
 	valueBox:SetTextColor(GetUIAccentColor())
-	local minimum = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local minimum = parent:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	minimum:SetPoint("RIGHT", parent, "TOPLEFT", x + SLIDER_LAYOUT.rangeLabelInset, y - SLIDER_LAYOUT.rangeLabelOffset); minimum:SetText(tostring(minValue)); minimum:SetTextColor(.82,.82,.82)
-	local maximum = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local maximum = parent:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	maximum:SetPoint("LEFT", parent, "TOPLEFT", x + width - SLIDER_LAYOUT.rangeLabelInset, y - SLIDER_LAYOUT.rangeLabelOffset); maximum:SetText(tostring(maxValue)); maximum:SetTextColor(.82,.82,.82)
 	local slider = CreateFrame("Slider", nil, parent)
 	slider:SetPoint("TOPLEFT", parent, "TOPLEFT", x + SLIDER_LAYOUT.trackInset, y - SLIDER_LAYOUT.trackOffset)
@@ -709,11 +761,40 @@ local function AddOptionsSlider(parent, label, x, y, width, minValue, maxValue, 
 	end
 	local function UpdateValue(v, apply)
 		local rounded = NormalizeValue(v)
+		valueBox.updatingValue = true
 		valueBox:SetText(tostring(rounded))
+		valueBox.updatingValue = false
+		valueBox.valueEdited = false
 		if apply then callback(rounded) end
 		return rounded
 	end
 	UpdateValue(value, false)
+	local function CommitValue()
+		if not valueBox.valueEdited then return end
+		local rounded = NormalizeValue(valueBox:GetText())
+		valueBox.updatingValue = true
+		valueBox:SetText(tostring(rounded))
+		valueBox.updatingValue = false
+		valueBox.valueEdited = false
+		if slider:GetValue() ~= rounded then
+			slider:SetValue(rounded)
+		else
+			callback(rounded)
+		end
+	end
+	valueBox:SetScript("OnTextChanged", function(self)
+		if not self.updatingValue then self.valueEdited = true end
+	end)
+	valueBox:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
+	valueBox:SetScript("OnEnterPressed", function(self) CommitValue(); self:ClearFocus() end)
+	valueBox:SetScript("OnEditFocusLost", CommitValue)
+	valueBox:SetScript("OnEscapePressed", function(self)
+		self.updatingValue = true
+		self:SetText(tostring(NormalizeValue(slider:GetValue())))
+		self.updatingValue = false
+		self.valueEdited = false
+		self:ClearFocus()
+	end)
 	slider.valueBox = valueBox
 	slider.valueBackground = valueBackground
 	slider.label = title
@@ -837,9 +918,9 @@ function Cell:RefreshOptionsMenu()
 	if self.optionsFrame.renameLayoutButton then if self.selectedGroupLayout == "Default" then self.optionsFrame.renameLayoutButton:Disable() else self.optionsFrame.renameLayoutButton:Enable() end end
 	if self.optionsFrame.deleteLayoutButton then if self.selectedGroupLayout == "Default" then self.optionsFrame.deleteLayoutButton:Disable() else self.optionsFrame.deleteLayoutButton:Enable() end end
 	if self.optionsFrame.groupsPerLineButton and selectedProfile then
-		self.optionsFrame.groupsPerLineButton:SetText("Groups per row / column: " .. selectedProfile.groupsPerLine)
+		self.optionsFrame.groupsPerLineButton:SetText(tostring(selectedProfile.groupsPerLine))
 	end
-	if self.optionsFrame.directionButton and selectedProfile then self.optionsFrame.directionButton:SetText("Direction: " .. (directionLabels[selectedProfile.direction] or directionLabels["down-right"])) end
+	if self.optionsFrame.directionButton and selectedProfile then self.optionsFrame.directionButton:SetText(directionLabels[selectedProfile.direction] or directionLabels["down-right"]) end
 	if self.optionsFrame.groupFilterChecks and selectedProfile then
 		for group = 1, 8 do self.optionsFrame.groupFilterChecks[group]:SetChecked(selectedProfile.groupFilter[group] ~= false) end
 	end
@@ -847,7 +928,12 @@ function Cell:RefreshOptionsMenu()
 	if selectedProfile then
 		if self.optionsFrame.healthBarDirectionDropdown then self.optionsFrame.healthBarDirectionDropdown:RefreshChoiceLabel() end
 		if self.optionsFrame.powerBarDirectionDropdown then self.optionsFrame.powerBarDirectionDropdown:RefreshChoiceLabel() end
-		if self.optionsFrame.powerBarSideDropdown then self.optionsFrame.powerBarSideDropdown:RefreshChoiceLabel(); if selectedProfile.powerBarOrientation == "VERTICAL" then self.optionsFrame.powerBarSideDropdown:Show() else self.optionsFrame.powerBarSideDropdown:Hide() end end
+		if self.optionsFrame.powerBarSideDropdown then
+			self.optionsFrame.powerBarSideDropdown:RefreshChoiceLabel()
+			local showPosition = selectedProfile.powerBarOrientation == "VERTICAL"
+			if showPosition then self.optionsFrame.powerBarSideDropdown:Show(); self.optionsFrame.powerPositionLabel:Show()
+			else self.optionsFrame.powerBarSideDropdown:Hide(); self.optionsFrame.powerPositionLabel:Hide() end
+		end
 	end
 	local function RefreshSwatch(button, color)
 		if button and button.colorTexture and color then button.colorTexture:SetTexture(color[1], color[2], color[3], 1) end
@@ -934,7 +1020,7 @@ end
 local function GetTextFontAndOutline(fontIndex, outlineIndex, fallbackFontIndex, fallbackOutlineIndex)
 	fontIndex = tonumber(fontIndex) or tonumber(fallbackFontIndex) or 1
 	outlineIndex = tonumber(outlineIndex) or tonumber(fallbackOutlineIndex) or 2
-	local font = nameFonts[fontIndex] or nameFonts[1]
+	local font = nameFonts[fontIndex] or nameFonts[Cell.defaultFontIndex or 1]
 	local outline = nameOutlines[outlineIndex] or nameOutlines[2]
 	return font, outline
 end
@@ -1044,7 +1130,7 @@ function Cell:SetTooltipsHideInCombat(enabled)
 end
 
 local function AddSectionTitle(parent, text, x, y)
-	local label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	local label = parent:CreateFontString(nil, "OVERLAY", "NotCellFontNormal")
 	label:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
 	label:SetText(text)
 	RegisterAccentRefresher(function() label:SetTextColor(GetUIAccentColor()) end)
@@ -1075,7 +1161,7 @@ local function StyleOptionsDropdownButton(button)
 	button.cellLabel:SetPoint("RIGHT", button, "RIGHT", -22, 0)
 	button.cellLabel:SetJustifyH("CENTER")
 	button.cellLabel:SetTextColor(.82, .90, .92)
-	local arrow = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local arrow = button:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	arrow:SetPoint("RIGHT", button, "RIGHT", -7, 0)
 	arrow:SetText("v")
 	arrow:SetTextColor(.45, .82, .90)
@@ -1195,6 +1281,9 @@ local function AddChoiceDropdown(parent, width, x, y, getLabel, choices, onSelec
 		end)
 	end
 	button:SetScript("OnClick", function()
+		local dropdownWidth = button:GetWidth() or width
+		menu:SetWidth(dropdownWidth); menuContent:SetWidth(math.max(1,dropdownWidth-4))
+		for _, option in ipairs(button.choiceOptions) do option:SetWidth(math.max(1,dropdownWidth-4)) end
 		if menu:IsShown() then
 			Dismiss()
 		else
@@ -1415,7 +1504,7 @@ function Cell:CreateOptionsMenu()
 	dragHandle:RegisterForDrag("LeftButton")
 	dragHandle:SetScript("OnDragStart", function() panel:StartMoving() end)
 	dragHandle:SetScript("OnDragStop", FinishPanelMove)
-	local title = dragHandle:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	local title = dragHandle:CreateFontString(nil, "OVERLAY", "NotCellFontNormal")
 	title:SetPoint("LEFT", dragHandle, "LEFT", 14, 0)
 	title:SetText("NotCell")
 	title:SetTextColor(GetUIAccentColor())
@@ -1431,7 +1520,7 @@ function Cell:CreateOptionsMenu()
 	scaleTrack:SetTexture("Interface\\Buttons\\WHITE8X8"); scaleTrack:SetPoint("LEFT", scaleSlider, "LEFT", 0, 0); scaleTrack:SetPoint("RIGHT", scaleSlider, "RIGHT", 0, 0); scaleTrack:SetHeight(8); scaleTrack:SetVertexColor(.10,.10,.10,1)
 	scaleSlider:SetThumbTexture("Interface\\Buttons\\WHITE8X8")
 	local scaleThumb = scaleSlider:GetThumbTexture(); if scaleThumb then scaleThumb:SetWidth(12); scaleThumb:SetHeight(12); scaleThumb:SetVertexColor(GetUIAccentColor()) end
-	local scaleValue = dragHandle:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local scaleValue = dragHandle:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	scaleValue:SetPoint("LEFT", scaleSlider, "RIGHT", 6, 0); scaleValue:SetWidth(46); scaleValue:SetJustifyH("LEFT"); scaleValue:SetTextColor(GetUIAccentColor())
 	local function SaveOptionsScale(value, apply)
 		value = math.floor((NormalizeOptionsScale(value) + 2.5) / 5) * 5
@@ -1624,7 +1713,7 @@ function Cell:CreateOptionsMenu()
 	local function GetClickProfileLabel()
 		return "Profile: " .. (Cell.clickCastProfileNames[Cell.activeClickCastProfile] or Cell.activeClickCastProfile)
 	end
-	local clickProfileName = clicksPage:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local clickProfileName = clicksPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	clickProfileName:SetPoint("LEFT", clicksPage, "TOPLEFT", 210, -22)
 	clickProfileName:SetWidth(197); clickProfileName:SetHeight(20)
 	clickProfileName:SetJustifyH("LEFT")
@@ -1677,11 +1766,11 @@ function Cell:CreateOptionsMenu()
 			titleBar:SetPoint("TOPLEFT", transferFrame, "TOPLEFT", 8, -6); titleBar:SetWidth(540); titleBar:SetHeight(32); titleBar:RegisterForDrag("LeftButton")
 			titleBar:SetScript("OnDragStart", function() transferFrame:StartMoving() end)
 			titleBar:SetScript("OnDragStop", function() transferFrame:StopMovingOrSizing() end)
-			transferFrame.title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			transferFrame.title = titleBar:CreateFontString(nil, "OVERLAY", "NotCellFontNormal")
 			transferFrame.title:SetPoint("LEFT", titleBar, "LEFT", 8, 0); transferFrame.title:SetTextColor(GetUIAccentColor()); RegisterAccentRefresher(function() transferFrame.title:SetTextColor(GetUIAccentColor()) end)
 			transferEdit = CreateFrame("EditBox", nil, transferFrame)
 			transferEdit:SetPoint("TOPLEFT", transferFrame, "TOPLEFT", 16, -48); transferEdit:SetWidth(568); transferEdit:SetHeight(350)
-			transferEdit:SetAutoFocus(false); transferEdit:SetMultiLine(true); transferEdit:SetFontObject(GameFontNormalSmall); transferEdit:SetTextInsets(8, 8, 8, 8)
+			transferEdit:SetAutoFocus(false); transferEdit:SetMultiLine(true); transferEdit:SetFontObject(NotCellFontNormalSmall); transferEdit:SetTextInsets(8, 8, 8, 8)
 			transferEdit:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = true, tileSize = 8, edgeSize = 8, insets = {left = 2, right = 2, top = 2, bottom = 2}})
 			transferEdit:SetBackdropColor(0.02, 0.02, 0.02, 1)
 			transferFrame.closeButton = AddOptionsButton(transferFrame, "Close", 492, -414, 90, function() transferFrame:Hide() end)
@@ -1709,11 +1798,11 @@ function Cell:CreateOptionsMenu()
 			profileDialog:SetFrameStrata("DIALOG"); profileDialog:SetFrameLevel(210); profileDialog:SetMovable(true); profileDialog:SetClampedToScreen(true)
 			profileDialog:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = true, tileSize = 8, edgeSize = 12, insets = {left = 4, right = 4, top = 4, bottom = 4}})
 			profileDialog:SetBackdropColor(0.035, 0.035, 0.035, 0.98)
-			profileDialog.title = profileDialog:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+			profileDialog.title = profileDialog:CreateFontString(nil, "OVERLAY", "NotCellFontNormal")
 			profileDialog.title:SetPoint("TOPLEFT", profileDialog, "TOPLEFT", 14, -14); profileDialog.title:SetTextColor(GetUIAccentColor()); RegisterAccentRefresher(function() profileDialog.title:SetTextColor(GetUIAccentColor()) end)
 			profileNameEdit = CreateFrame("EditBox", nil, profileDialog)
 			profileNameEdit:SetPoint("TOPLEFT", profileDialog, "TOPLEFT", 14, -42); profileNameEdit:SetWidth(312); profileNameEdit:SetHeight(24)
-			profileNameEdit:SetAutoFocus(false); profileNameEdit:SetFontObject(GameFontNormalSmall); profileNameEdit:SetTextInsets(5, 5, 2, 2)
+			profileNameEdit:SetAutoFocus(false); profileNameEdit:SetFontObject(NotCellFontNormalSmall); profileNameEdit:SetTextInsets(5, 5, 2, 2)
 			profileNameEdit:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = true, tileSize = 8, edgeSize = 8, insets = {left = 2, right = 2, top = 2, bottom = 2}})
 			profileNameEdit:SetBackdropColor(0.02, 0.02, 0.02, 1)
 			profileDialog.okButton = AddOptionsButton(profileDialog, "Save", 126, -86, 90, nil)
@@ -1741,13 +1830,13 @@ function Cell:CreateOptionsMenu()
 	clickNewProfileButton:SetScript("OnClick", function() OpenProfileDialog("new") end)
 	clickRenameProfileButton:SetScript("OnClick", function() OpenProfileDialog("rename") end)
 	UpdateClickProfileLabel()
-	local clickKeyHeader = clicksPage:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local clickKeyHeader = clicksPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	clickKeyHeader:SetText("Keybind")
-	local clickTypeHeader = clicksPage:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local clickTypeHeader = clicksPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	clickTypeHeader:SetText("Type")
-	local clickActionHeader = clicksPage:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local clickActionHeader = clicksPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	clickActionHeader:SetText("Action")
-	local clickCastInstruction = clicksPage:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local clickCastInstruction = clicksPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	clickCastInstruction:SetPoint("TOP", clicksPage, "TOP", 0, -62)
 	clickCastInstruction:SetWidth(407); clickCastInstruction:SetHeight(30); clickCastInstruction:SetJustifyH("CENTER")
 	clickCastInstruction:SetText("Right Click on a bind to delete it.")
@@ -1780,7 +1869,7 @@ function Cell:CreateOptionsMenu()
 	clickKeyHeader:SetPoint("BOTTOMLEFT", clickList, "TOPLEFT", 0, 7); clickKeyHeader:SetWidth(105); clickKeyHeader:SetJustifyH("CENTER")
 	clickTypeHeader:SetPoint("BOTTOMLEFT", clickList, "TOPLEFT", 108, 7); clickTypeHeader:SetWidth(72); clickTypeHeader:SetJustifyH("CENTER")
 	clickActionHeader:SetPoint("BOTTOMLEFT", clickList, "TOPLEFT", 183, 7); clickActionHeader:SetWidth(164); clickActionHeader:SetJustifyH("CENTER")
-	local clickRankHeader = clicksPage:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local clickRankHeader = clicksPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	clickRankHeader:SetPoint("BOTTOMLEFT", clickList, "TOPLEFT", 350, 7); clickRankHeader:SetWidth(55); clickRankHeader:SetJustifyH("CENTER"); clickRankHeader:SetText("Rank")
 	local clickListChild = CreateFrame("Frame", nil, clickList)
 	clickListChild:SetWidth(393); clickListChild:SetHeight(192)
@@ -1823,7 +1912,7 @@ function Cell:CreateOptionsMenu()
 		if not GameTooltip then return end
 		GameTooltip:SetOwner(bindingModeButton, "ANCHOR_RIGHT")
 		GameTooltip:SetText("Spellbook capture", 1, 0.82, 0)
-		GameTooltip:AddLine("Click to open or close your spellbook. Hover over a spell and press a key to add a bind.", 1, 1, 1, true); GameTooltip:Show()
+		GameTooltip:AddLine("Click to open or close your spellbook. Hover over a spell and press a key to add a bind.", 1, 1, 1, true); GameTooltip:Show(); StyleNotCellTooltip(GameTooltip)
 	end)
 	bindingModeButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	bindingModeButton:SetScript("OnClick", function()
@@ -1840,7 +1929,7 @@ function Cell:CreateOptionsMenu()
 			elseif HideUIPanel then HideUIPanel(SpellBookFrame) else SpellBookFrame:Hide() end
 		end
 	end)
-	local bindingModeHelp = clicksPage:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local bindingModeHelp = clicksPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	bindingModeHelp:SetPoint("TOP", bindingModeButton, "BOTTOM", 0, -6)
 	bindingModeHelp:SetWidth(360); bindingModeHelp:SetHeight(36); bindingModeHelp:SetJustifyH("CENTER")
 	bindingModeHelp:SetTextColor(GetUIAccentColor())
@@ -1874,7 +1963,7 @@ function Cell:CreateOptionsMenu()
 				button = CreateFrame("Button", nil, clickMenuChild); button:SetWidth(212); button:SetHeight(22)
 				button.icon = button:CreateTexture(nil, "ARTWORK")
 				button.icon:SetWidth(16); button.icon:SetHeight(16); button.icon:SetPoint("LEFT", button, "LEFT", 4, 0); button.icon:Hide()
-				button.text = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+				button.text = button:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 				button.text:SetPoint("LEFT", button, "LEFT", 5, 0); button.text:SetPoint("RIGHT", button, "RIGHT", -5, 0); button.text:SetJustifyH("LEFT")
 				button:SetHighlightTexture("Interface\\Buttons\\UI-Listbox-Highlight")
 				clickMenuButtons[i] = button
@@ -2103,7 +2192,7 @@ function Cell:CreateOptionsMenu()
 	end
 	clickSpellEdit = CreateFrame("EditBox", nil, clicksPage)
 	clickSpellEdit:SetWidth(390); clickSpellEdit:SetHeight(22)
-	clickSpellEdit:SetAutoFocus(false); clickSpellEdit:SetFontObject(GameFontNormalSmall); clickSpellEdit:SetTextInsets(5, 5, 2, 2)
+	clickSpellEdit:SetAutoFocus(false); clickSpellEdit:SetFontObject(NotCellFontNormalSmall); clickSpellEdit:SetTextInsets(5, 5, 2, 2)
 	clickSpellEdit:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", tile = true, tileSize = 8, edgeSize = 8, insets = {left = 2, right = 2, top = 2, bottom = 2}})
 	clickSpellEdit:SetBackdropColor(0.05, 0.05, 0.05, 1)
 	clickSpellEdit:SetScript("OnTextChanged", function(self, userInput)
@@ -2172,7 +2261,7 @@ function Cell:CreateOptionsMenu()
 		if RefreshClickCastList then RefreshClickCastList() end
 		return true
 	end
-	selectedBindLabel = clicksPage:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	selectedBindLabel = clicksPage:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	selectedBindLabel:SetPoint("TOPLEFT", clicksPage, "TOPLEFT", 10, -300)
 	selectedBindLabel:SetWidth(407); selectedBindLabel:SetHeight(20); selectedBindLabel:Hide()
 	SaveClickCast = function(clear)
@@ -2266,6 +2355,14 @@ function Cell:CreateOptionsMenu()
 		for i = 1, table.getn(clickRows) do if clickRows[i] then clickRows[i].button:EnableKeyboard(false) end end
 		if bindingMode then DisableSpellbookCapture() end
 	end)
+	panel:HookScript("OnHide", function()
+		if Cell.layoutPreviewMode then
+			Cell.layoutPreviewMode = nil
+			Cell.preview = false; Cell.previewMode = nil; Cell.previewLimit = nil; Cell.previewGroupLayout = nil
+			Cell:UpdateFrames()
+			if Cell.optionsFrame and Cell.optionsFrame.layoutPreviewButton then Cell.optionsFrame.layoutPreviewButton:SetText("Preview: Off") end
+		end
+	end)
 	local function SaveSpellbookBinding(button, key)
 		if key == "ESCAPE" and bindingMode then DisableSpellbookCapture(); return end
 		if not bindingMode or not GetHoveredSpell then return end
@@ -2346,17 +2443,18 @@ function Cell:CreateOptionsMenu()
 		SpellBookFrame:HookScript("OnKeyDown", function(_, key) if bindingMode and key == "ESCAPE" then DisableSpellbookCapture() end end)
 	end
 
-	local optionBuilder = Cell.OptionPageBuilders and Cell.OptionPageBuilders.general
-	if optionBuilder then
-		optionBuilder({Cell = Cell, panel = panel, pages = panel.pages, AddOptionsButton = AddOptionsButton, AddOptionsCheckbox = AddOptionsCheckbox, AddOptionsSlider = AddOptionsSlider, AddChoiceDropdown = AddChoiceDropdown, StyleOptionsDropdownButton = StyleOptionsDropdownButton, StyleOptionsDropdownMenu = StyleOptionsDropdownMenu, AddSectionTitle = AddSectionTitle, AddOptionsDivider = AddOptionsDivider, RegisterAccentRefresher = RegisterAccentRefresher, GetUIAccentColor = GetUIAccentColor, SetPageContentExtent = setPageContentExtent,
-			SaveSetting = function(key, value) local settings = GetCellSettingsDB(); settings[key] = value; SaveCellSettingsDB() end})
+	local function buildOptionPage(name, builder, context)
+		if not builder then return end
+		local ok, err = pcall(builder, context)
+		if not ok and DEFAULT_CHAT_FRAME then
+			DEFAULT_CHAT_FRAME:AddMessage("NotCell: " .. name .. " options could not be created: " .. tostring(err))
+		end
 	end
-
-	local appearanceBuilder = Cell.OptionPageBuilders and Cell.OptionPageBuilders.appearance
-	if appearanceBuilder then appearanceBuilder({Cell = Cell, panel = panel, pages = panel.pages, AddOptionsButton = AddOptionsButton, AddOptionsCheckbox = AddOptionsCheckbox, AddOptionsSlider = AddOptionsSlider, AddChoiceDropdown = AddChoiceDropdown, StyleOptionsDropdownButton = StyleOptionsDropdownButton, StyleOptionsDropdownMenu = StyleOptionsDropdownMenu, AddSectionTitle = AddSectionTitle, AddOptionsDivider = AddOptionsDivider, RegisterAccentRefresher = RegisterAccentRefresher, GetUIAccentColor = GetUIAccentColor, SetPageContentExtent = setPageContentExtent,
-		SaveSetting = function(key, value) local settings = GetCellSettingsDB(); settings[key] = value; SaveCellSettingsDB() end}) end
-	local indicatorsBuilder = Cell.OptionPageBuilders and Cell.OptionPageBuilders.indicators
-	if indicatorsBuilder then indicatorsBuilder({Cell = Cell, panel = panel, pages = panel.pages, AddOptionsButton = AddOptionsButton, AddOptionsCheckbox = AddOptionsCheckbox, AddOptionsSlider = AddOptionsSlider, AddChoiceDropdown = AddChoiceDropdown, StyleOptionsDropdownButton = StyleOptionsDropdownButton, StyleOptionsDropdownMenu = StyleOptionsDropdownMenu, AddSectionTitle = AddSectionTitle, AddOptionsDivider = AddOptionsDivider, RegisterAccentRefresher = RegisterAccentRefresher, GetUIAccentColor = GetUIAccentColor, SetPageContentExtent = setPageContentExtent}) end
+	local commonPageContext = {Cell = Cell, panel = panel, pages = panel.pages, AddOptionsButton = AddOptionsButton, AddOptionsCheckbox = AddOptionsCheckbox, AddOptionsSlider = AddOptionsSlider, AddChoiceDropdown = AddChoiceDropdown, StyleOptionsDropdownButton = StyleOptionsDropdownButton, StyleOptionsDropdownMenu = StyleOptionsDropdownMenu, AddSectionTitle = AddSectionTitle, AddOptionsDivider = AddOptionsDivider, RegisterAccentRefresher = RegisterAccentRefresher, GetUIAccentColor = GetUIAccentColor, SetPageContentExtent = setPageContentExtent,
+		SaveSetting = function(key, value) local settings = GetCellSettingsDB(); settings[key] = value; SaveCellSettingsDB() end}
+	buildOptionPage("General", Cell.OptionPageBuilders and Cell.OptionPageBuilders.general, commonPageContext)
+	buildOptionPage("Appearance", Cell.OptionPageBuilders and Cell.OptionPageBuilders.appearance, commonPageContext)
+	buildOptionPage("Indicators", Cell.OptionPageBuilders and Cell.OptionPageBuilders.indicators, commonPageContext)
 	if panel.layoutAutoSwitchFrame and panel.indicatorPreviewFrame then
 		panel.layoutAutoSwitchFrame:ClearAllPoints(); panel.layoutAutoSwitchFrame:SetPoint("TOPLEFT",panel.indicatorPreviewFrame,"BOTTOMLEFT",0,-78)
 	end
@@ -2418,10 +2516,13 @@ function Cell:CreateOptionsMenu()
 		-- This is called both with dot and colon syntax throughout the options code.
 		function button.RefreshChoiceLabel()
 			local value=getValue()
-			button:SetText((labelPrefix or "Layout")..": "..(value=="hide" and "Hide" or (Cell.groupLayoutLabels[value] or value or "Default")))
+			local valueLabel=value=="hide" and "Hide" or (Cell.groupLayoutLabels[value] or value or "Default")
+			button:SetText(labelPrefix == false and valueLabel or ((labelPrefix or "Layout")..": "..valueLabel))
 		end
 		button:SetScript("OnClick",function()
 			if menu:IsShown() then menu:Hide(); return end
+			local dropdownWidth=button:GetWidth() or width
+			menu:SetWidth(dropdownWidth)
 			local keys={}
 			if includeHide then keys[#keys+1]="hide" end
 			for _,key in ipairs(Cell.groupLayoutNames or {}) do keys[#keys+1]=key end
@@ -2429,8 +2530,8 @@ function Cell:CreateOptionsMenu()
 			if button:GetBottom() and button:GetBottom()<menu:GetHeight()+20 then menu:SetPoint("BOTTOMLEFT",button,"TOPLEFT",0,1) else menu:SetPoint("TOPLEFT",button,"BOTTOMLEFT",0,-1) end
 			for i,key in ipairs(keys) do
 				local layoutKey=key; local row=rows[i]
-				if not row then row=StyleOptionsDropdownItem(AddOptionsButton(menu,"",3,-3-(i-1)*24,width-6,nil)); row:SetHeight(23); rows[i]=row end
-				row:SetPoint("TOPLEFT",menu,"TOPLEFT",3,-3-(i-1)*24); row:SetText(layoutKey=="hide" and "Hide" or (Cell.groupLayoutLabels[layoutKey] or layoutKey)); row:SetScript("OnClick",function() menu:Hide(); onSelect(layoutKey) end); row:Show()
+				if not row then row=StyleOptionsDropdownItem(AddOptionsButton(menu,"",3,-3-(i-1)*24,dropdownWidth-6,nil)); row:SetHeight(23); rows[i]=row end
+				row:SetWidth(dropdownWidth-6); row:SetPoint("TOPLEFT",menu,"TOPLEFT",3,-3-(i-1)*24); row:SetText(layoutKey=="hide" and "Hide" or (Cell.groupLayoutLabels[layoutKey] or layoutKey)); row:SetScript("OnClick",function() menu:Hide(); onSelect(layoutKey) end); row:Show()
 			end
 			for i=table.getn(keys)+1,table.getn(rows) do rows[i]:Hide() end
 			Cell:ShowOptionsDropdown(menu); menu:Show()
@@ -2450,9 +2551,9 @@ function Cell:CreateOptionsMenu()
 		Cell:ApplyTextSettings(); if Cell.optionsFrame and Cell.optionsFrame.UpdateIndicatorPreview then Cell.optionsFrame.UpdateIndicatorPreview() end
 		Cell:UpdateFrames(); Cell:RefreshOptionsMenu()
 	end
-	panel.layoutsHeading = AddSectionTitle(sizePage, "Layouts", 10, -12)
-	panel.groupLayoutButton=AddLayoutPicker(sizePage,10,-40,407,function() return Cell.selectedGroupLayout end,ApplySelectedLayout,"Layout")
-	local layoutNameEdit=CreateFrame("EditBox",nil,sizePage); layoutNameEdit:SetWidth(160); layoutNameEdit:SetHeight(26); layoutNameEdit:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-74); layoutNameEdit:SetAutoFocus(false); layoutNameEdit:SetFontObject(GameFontNormalSmall); layoutNameEdit:SetTextInsets(5,5,2,2); layoutNameEdit:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=8,insets={left=2,right=2,top=2,bottom=2}}); layoutNameEdit:SetBackdropColor(.05,.05,.05,1); layoutNameEdit:SetText("New layout name"); panel.layoutNameEdit=layoutNameEdit
+	panel.layoutLabel = sizePage:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); panel.layoutLabel:SetText("Layout")
+	panel.groupLayoutButton=AddLayoutPicker(sizePage,95,-12,322,function() return Cell.selectedGroupLayout end,ApplySelectedLayout,false)
+	local layoutNameEdit=CreateFrame("EditBox",nil,sizePage); layoutNameEdit:SetWidth(160); layoutNameEdit:SetHeight(26); layoutNameEdit:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-74); layoutNameEdit:SetAutoFocus(false); layoutNameEdit:SetFontObject(NotCellFontNormalSmall); layoutNameEdit:SetTextInsets(5,5,2,2); layoutNameEdit:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=8,insets={left=2,right=2,top=2,bottom=2}}); layoutNameEdit:SetBackdropColor(.05,.05,.05,1); layoutNameEdit:SetText("New layout name"); panel.layoutNameEdit=layoutNameEdit
 	layoutNameEdit:SetScript("OnEditFocusGained",function(self) if self:GetText()=="New layout name" then self:SetText("") end end)
 	layoutNameEdit:SetScript("OnEditFocusLost",function(self) if self:GetText()=="" then self:SetText("New layout name") end end)
 	layoutNameEdit:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
@@ -2497,9 +2598,9 @@ function Cell:CreateOptionsMenu()
 			layoutTransferFrame:SetWidth(600); layoutTransferFrame:SetHeight(460); layoutTransferFrame:SetPoint("CENTER",UIParent,"CENTER",0,0)
 			layoutTransferFrame:SetFrameStrata("DIALOG"); layoutTransferFrame:SetFrameLevel(220); layoutTransferFrame:SetMovable(true); layoutTransferFrame:SetClampedToScreen(true)
 			layoutTransferFrame:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=12,insets={left=4,right=4,top=4,bottom=4}}); layoutTransferFrame:SetBackdropColor(.035,.035,.035,.98)
-		layoutTransferFrame.title=layoutTransferFrame:CreateFontString(nil,"OVERLAY","GameFontNormal"); layoutTransferFrame.title:SetPoint("TOPLEFT",layoutTransferFrame,"TOPLEFT",16,-14); layoutTransferFrame.title:SetTextColor(GetUIAccentColor()); RegisterAccentRefresher(function() layoutTransferFrame.title:SetTextColor(GetUIAccentColor()) end)
+		layoutTransferFrame.title=layoutTransferFrame:CreateFontString(nil,"OVERLAY","NotCellFontNormal"); layoutTransferFrame.title:SetPoint("TOPLEFT",layoutTransferFrame,"TOPLEFT",16,-14); layoutTransferFrame.title:SetTextColor(GetUIAccentColor()); RegisterAccentRefresher(function() layoutTransferFrame.title:SetTextColor(GetUIAccentColor()) end)
 			layoutTransferScroll=CreateFrame("ScrollFrame",nil,layoutTransferFrame); layoutTransferScroll:SetPoint("TOPLEFT",layoutTransferFrame,"TOPLEFT",16,-48); layoutTransferScroll:SetWidth(568); layoutTransferScroll:SetHeight(350); layoutTransferScroll:EnableMouseWheel(true)
-			layoutTransferEdit=CreateFrame("EditBox",nil,layoutTransferScroll); layoutTransferEdit:SetPoint("TOPLEFT",layoutTransferScroll,"TOPLEFT",0,0); layoutTransferEdit:SetWidth(552); layoutTransferEdit:SetHeight(350); layoutTransferEdit:SetAutoFocus(false); layoutTransferEdit:SetMultiLine(true); layoutTransferEdit:SetFontObject(GameFontNormalSmall); layoutTransferEdit:SetTextInsets(8,8,8,8); layoutTransferScroll:SetScrollChild(layoutTransferEdit)
+			layoutTransferEdit=CreateFrame("EditBox",nil,layoutTransferScroll); layoutTransferEdit:SetPoint("TOPLEFT",layoutTransferScroll,"TOPLEFT",0,0); layoutTransferEdit:SetWidth(552); layoutTransferEdit:SetHeight(350); layoutTransferEdit:SetAutoFocus(false); layoutTransferEdit:SetMultiLine(true); layoutTransferEdit:SetFontObject(NotCellFontNormalSmall); layoutTransferEdit:SetTextInsets(8,8,8,8); layoutTransferScroll:SetScrollChild(layoutTransferEdit)
 			layoutTransferScroll:SetScript("OnMouseWheel",function(self,delta) self:SetVerticalScroll(math.max(0,math.min(math.max(0,layoutTransferEdit:GetHeight()-self:GetHeight()),(self:GetVerticalScroll() or 0)-delta*24))) end)
 			layoutTransferEdit:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=8,insets={left=2,right=2,top=2,bottom=2}}); layoutTransferEdit:SetBackdropColor(.02,.02,.02,1)
 			layoutTransferFrame.close=AddOptionsButton(layoutTransferFrame,"Close",492,-414,90,function() layoutTransferFrame:Hide() end)
@@ -2535,8 +2636,7 @@ function Cell:CreateOptionsMenu()
 	end
 	panel.exportLayoutButton=AddOptionsButton(sizePage,"Export",10,-104,80,function() OpenLayoutTransfer("export") end)
 	panel.importLayoutButton=AddOptionsButton(sizePage,"Import",96,-104,80,function() OpenLayoutTransfer("import") end)
-	panel.selectedLayoutHeading = AddSectionTitle(sizePage, "Selected layout settings", 10, -142)
-	widthSlider = AddOptionsSlider(sizePage, "Width", 10, -172, 195, 40, 300, 1, self.buttonWidth, function(value)
+	widthSlider = AddOptionsSlider(sizePage, "Frame Width", 10, -142, 195, 40, 300, 1, self.buttonWidth, function(value)
 		if Cell.syncingLayoutControls then return end
 		Cell.groupLayoutProfiles[Cell.selectedGroupLayout].width = value
 		SaveLayoutSettings()
@@ -2548,7 +2648,7 @@ function Cell:CreateOptionsMenu()
 		end
 		if Cell.optionsFrame and Cell.optionsFrame.UpdateIndicatorPreview then Cell.optionsFrame.UpdateIndicatorPreview() end
 	end)
-	heightSlider = AddOptionsSlider(sizePage, "Height", 220, -172, 195, 32, 120, 1, self.buttonHeight, function(value)
+	heightSlider = AddOptionsSlider(sizePage, "Frame Height", 220, -142, 195, 32, 120, 1, self.buttonHeight, function(value)
 		if Cell.syncingLayoutControls then return end
 		Cell.groupLayoutProfiles[Cell.selectedGroupLayout].height = value
 		SaveLayoutSettings()
@@ -2560,7 +2660,7 @@ function Cell:CreateOptionsMenu()
 		end
 		if Cell.optionsFrame and Cell.optionsFrame.UpdateIndicatorPreview then Cell.optionsFrame.UpdateIndicatorPreview() end
 	end)
-	powerHeightSlider = AddOptionsSlider(sizePage, "Power bar height", 10, -222, 195, 2, 12, 1, self.powerBarHeight, function(value)
+	powerHeightSlider = AddOptionsSlider(sizePage, "Power Bar Height", 10, -142, 195, 2, 12, 1, self.powerBarHeight, function(value)
 		if Cell.syncingLayoutControls then return end
 		Cell.groupLayoutProfiles[Cell.selectedGroupLayout].powerBarHeight = value
 		SaveLayoutSettings()
@@ -2573,38 +2673,54 @@ function Cell:CreateOptionsMenu()
 	panel.widthSlider = widthSlider
 	panel.heightSlider = heightSlider
 	panel.powerHeightSlider = powerHeightSlider
+	panel.layoutSliderDividers = {}
+	for i = 1, 2 do
+		local divider = sizePage:CreateTexture(nil, "ARTWORK")
+		divider:SetTexture("Interface\\Buttons\\WHITE8X8")
+		divider:SetVertexColor(.42,.31,.19,.9); divider:SetWidth(2); divider:SetHeight(58)
+		panel.layoutSliderDividers[i] = divider
+		RegisterAccentRefresher(function()
+			local r,g,b=GetUIAccentColor(); divider:SetVertexColor(r*.45,g*.36,b*.24,.9)
+		end)
+	end
 	local barOrientationChoices = {{name="Horizontal",value="HORIZONTAL"},{name="Vertical",value="VERTICAL"}}
 	local powerSideChoices = {{name="Left",value="LEFT"},{name="Right",value="RIGHT"}}
-	panel.healthBarDirectionDropdown = AddChoiceDropdown(sizePage,195,220,-222,function()
-		return "Health fill: " .. (Cell.groupLayoutProfiles[Cell.selectedGroupLayout].healthBarOrientation == "VERTICAL" and "Vertical" or "Horizontal")
+	panel.healthFillLabel = sizePage:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); panel.healthFillLabel:SetText("Health Fill Direction")
+	panel.healthBarDirectionDropdown = AddChoiceDropdown(sizePage,105,115,-222,function()
+		return Cell.groupLayoutProfiles[Cell.selectedGroupLayout].healthBarOrientation == "VERTICAL" and "Vertical" or "Horizontal"
 	end,barOrientationChoices,function(value)
 		local profile=Cell.groupLayoutProfiles[Cell.selectedGroupLayout]; profile.healthBarOrientation=value; SaveLayoutSettings()
 		if Cell.preview or not Cell.autoGroupLayouts or Cell.activeGroupLayout==Cell.selectedGroupLayout then Cell.healthBarOrientation=value; Cell:ApplyButtonSize() end
 		Cell:RefreshOptionsMenu()
 	end)
-	panel.powerBarDirectionDropdown = AddChoiceDropdown(sizePage,195,220,-252,function()
-		return "Power bar: " .. (Cell.groupLayoutProfiles[Cell.selectedGroupLayout].powerBarOrientation == "VERTICAL" and "Vertical" or "Horizontal")
+	panel.powerDirectionLabel = sizePage:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); panel.powerDirectionLabel:SetText("Power Bar Direction")
+	panel.powerBarDirectionDropdown = AddChoiceDropdown(sizePage,105,115,-252,function()
+		return Cell.groupLayoutProfiles[Cell.selectedGroupLayout].powerBarOrientation == "VERTICAL" and "Vertical" or "Horizontal"
 	end,barOrientationChoices,function(value)
 		local profile=Cell.groupLayoutProfiles[Cell.selectedGroupLayout]; profile.powerBarOrientation=value; SaveLayoutSettings()
 		if Cell.preview or not Cell.autoGroupLayouts or Cell.activeGroupLayout==Cell.selectedGroupLayout then Cell.powerBarOrientation=value; Cell:ApplyButtonSize() end
 		Cell:RefreshOptionsMenu()
 	end)
-	panel.powerBarSideDropdown = AddChoiceDropdown(sizePage,195,220,-282,function()
-		return "Power bar side: " .. (Cell.groupLayoutProfiles[Cell.selectedGroupLayout].powerBarSide == "RIGHT" and "Right" or "Left")
+	panel.powerPositionLabel = sizePage:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); panel.powerPositionLabel:SetText("Power Bar Side")
+	panel.powerBarSideDropdown = AddChoiceDropdown(sizePage,105,115,-282,function()
+		return Cell.groupLayoutProfiles[Cell.selectedGroupLayout].powerBarSide == "RIGHT" and "Right" or "Left"
 	end,powerSideChoices,function(value)
 		local profile=Cell.groupLayoutProfiles[Cell.selectedGroupLayout]; profile.powerBarSide=value; SaveLayoutSettings()
 		if Cell.preview or not Cell.autoGroupLayouts or Cell.activeGroupLayout==Cell.selectedGroupLayout then Cell.powerBarSide=value; Cell:ApplyButtonSize() end
 		Cell:RefreshOptionsMenu()
 	end)
-	panel.groupArrangementHeading = AddSectionTitle(sizePage, "Group arrangement", 10, -282)
-	panel.groupsPerLineButton = AddOptionsButton(sizePage, "", 10, -312, 195, function()
+	panel.groupArrangementHeading = AddSectionTitle(sizePage, "Group Frames Arrangement", 10, -316)
+	panel.groupArrangementHeading:SetJustifyH("CENTER")
+	panel.groupsPerLineLabel = sizePage:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); panel.groupsPerLineLabel:SetText("Max Groups per Row/Column")
+	panel.groupsPerLineButton = AddOptionsButton(sizePage, "", 10, -346, 407, function()
 		local profile = Cell.groupLayoutProfiles[Cell.selectedGroupLayout]
 		profile.groupsPerLine = profile.groupsPerLine % 8 + 1
 		SaveLayoutSettings()
 		if Cell.preview or not Cell.autoGroupLayouts or Cell.activeGroupLayout == Cell.selectedGroupLayout then Cell:ApplyButtonSize() end
 		Cell:RefreshOptionsMenu()
 	end)
-	panel.directionButton = AddOptionsButton(sizePage, "", 220, -312, 195, function()
+	panel.directionLabel = sizePage:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); panel.directionLabel:SetText("Direction")
+	panel.directionButton = AddOptionsButton(sizePage, "", 10, -376, 407, function()
 		local profile = Cell.groupLayoutProfiles[Cell.selectedGroupLayout]
 		local current = 1
 		for i = 1, table.getn(directionModes) do if directionModes[i] == profile.direction then current = i end end
@@ -2614,11 +2730,11 @@ function Cell:CreateOptionsMenu()
 		Cell:RefreshOptionsMenu()
 	end)
 	panel.groupFilterChecks = {}
-	panel.groupFilterHeading = AddSectionTitle(sizePage, "Group filter", 10, -352)
+	panel.groupFilterHeading = AddSectionTitle(sizePage, "Groups Filter", 10, -416)
 	for group = 1, 8 do
 		local groupID = group -- Lua 5.0 closures otherwise all capture the final loop value.
 		local check = CreateFrame("Button", nil, sizePage)
-		check:SetWidth(40); check:SetHeight(30); check:SetPoint("TOPLEFT", sizePage, "TOPLEFT", 10 + (groupID - 1) * 50, -376)
+		check:SetWidth(40); check:SetHeight(30); check:SetPoint("TOPLEFT", sizePage, "TOPLEFT", 10 + (groupID - 1) * 50, -440)
 		local background = check:CreateTexture(nil, "BACKGROUND"); background:SetAllPoints(check); background:SetTexture("Interface\\Buttons\\WHITE8X8"); check.background = background
 		local border = {}
 		for _, edge in ipairs({"TOP", "BOTTOM", "LEFT", "RIGHT"}) do
@@ -2626,7 +2742,7 @@ function Cell:CreateOptionsMenu()
 			if edge == "TOP" or edge == "BOTTOM" then line:SetPoint(edge,check,edge,0,0); line:SetWidth(40); line:SetHeight(1) else line:SetPoint(edge,check,edge,0,0); line:SetWidth(1); line:SetHeight(30) end
 			border[edge] = line
 		end
-		local number = check:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall"); number:SetPoint("CENTER",check,"CENTER",0,0); number:SetText(tostring(groupID)); check.number = number
+		local number = check:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall"); number:SetPoint("CENTER",check,"CENTER",0,0); number:SetText(tostring(groupID)); check.number = number
 		function check:SetChecked(checked)
 			self.checked = checked and true or false
 			local r,g,b=GetUIAccentColor()
@@ -2644,7 +2760,7 @@ function Cell:CreateOptionsMenu()
 		end)
 		panel.groupFilterChecks[group] = check
 	end
-	panel.layoutPreviewButton = AddOptionsButton(sizePage, "Preview: Off", 10, -414, 407, function()
+	panel.layoutPreviewButton = AddOptionsButton(sizePage, "Preview: Off", 10, -478, 407, function()
 		local nextMode = Cell.layoutPreviewMode == nil and "party" or Cell.layoutPreviewMode == "party" and "raid" or nil
 		Cell.layoutPreviewMode = nextMode
 		Cell.preview = nextMode ~= nil
@@ -2653,62 +2769,84 @@ function Cell:CreateOptionsMenu()
 		Cell.previewGroupLayout = Cell.selectedGroupLayout
 		Cell:UpdateFrames(); Cell:RefreshOptionsMenu()
 	end)
-	panel.spacingXSlider = AddOptionsSlider(sizePage, "Unit Spacing Horizontal", 10, -448, 195, 0, 100, 1, 5, function(value)
+	panel.spacingXSlider = AddOptionsSlider(sizePage, "Horizontal Spacing", 10, -512, 195, 0, 100, 1, 5, function(value)
 		if Cell.syncingLayoutControls then return end
 		Cell.groupLayoutProfiles[Cell.selectedGroupLayout].spacingX = value; SaveLayoutSettings()
 		if Cell.preview or not Cell.autoGroupLayouts or Cell.activeGroupLayout == Cell.selectedGroupLayout then Cell:ApplyButtonSize() end
 	end)
-	panel.spacingYSlider = AddOptionsSlider(sizePage, "Unit Spacing Vertical", 220, -448, 195, 0, 100, 1, 4, function(value)
+	panel.spacingYSlider = AddOptionsSlider(sizePage, "Vertical Spacing", 220, -512, 195, 0, 100, 1, 4, function(value)
 		if Cell.syncingLayoutControls then return end
 		Cell.groupLayoutProfiles[Cell.selectedGroupLayout].spacingY = value; SaveLayoutSettings()
 		if Cell.preview or not Cell.autoGroupLayouts or Cell.activeGroupLayout == Cell.selectedGroupLayout then Cell:ApplyButtonSize() end
 	end)
 	panel.UpdateLayoutsResponsive = function()
-		local width=math.max(1,sizePage:GetWidth()-20); local gap=20; local column=(width-gap)/2; local right=10+column+gap
-		panel.layoutsHeading:ClearAllPoints(); panel.layoutsHeading:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-12)
-		panel.groupLayoutButton:ClearAllPoints(); panel.groupLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-40); panel.groupLayoutButton:SetWidth(width)
+		local width=math.max(1,sizePage:GetWidth()-20); local gap=22; local column=(width-gap*2)/3
+		panel.layoutLabel:ClearAllPoints(); panel.layoutLabel:SetPoint("RIGHT",panel.groupLayoutButton,"LEFT",-12,0); panel.layoutLabel:SetWidth(72); panel.layoutLabel:SetHeight(20)
+		panel.groupLayoutButton:ClearAllPoints(); panel.groupLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",86,-12); panel.groupLayoutButton:SetWidth(width-76)
 		local nameWidth=math.min(160,math.max(130,width*.40)); local start=10+nameWidth+8; local gapSmall=4; local buttonW=math.max(54,(width-nameWidth-16)/3)
-		layoutNameEdit:ClearAllPoints(); layoutNameEdit:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-74); layoutNameEdit:SetWidth(nameWidth)
+		layoutNameEdit:ClearAllPoints(); layoutNameEdit:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-54); layoutNameEdit:SetWidth(nameWidth)
 		local createW,renameW,deleteW=buttonW,buttonW,buttonW
-		panel.createLayoutButton:ClearAllPoints(); panel.createLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",start,-74); panel.createLayoutButton:SetWidth(createW)
-		panel.renameLayoutButton:ClearAllPoints(); panel.renameLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",start+createW+gapSmall,-74); panel.renameLayoutButton:SetWidth(renameW)
-		panel.deleteLayoutButton:ClearAllPoints(); panel.deleteLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",start+createW+renameW+gapSmall*2,-74); panel.deleteLayoutButton:SetWidth(deleteW)
-		panel.exportLayoutButton:ClearAllPoints(); panel.exportLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-104); panel.exportLayoutButton:SetWidth((width-gapSmall)/2)
-		panel.importLayoutButton:ClearAllPoints(); panel.importLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10+(width+gapSmall)/2,-104); panel.importLayoutButton:SetWidth((width-gapSmall)/2)
-		panel.selectedLayoutHeading:ClearAllPoints(); panel.selectedLayoutHeading:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-142)
-		Cell:PlaceOptionsSlider(widthSlider,sizePage,10,-162,column); Cell:PlaceOptionsSlider(heightSlider,sizePage,right,-162,column); Cell:PlaceOptionsSlider(powerHeightSlider,sizePage,10,-222,column)
-		panel.healthBarDirectionDropdown:ClearAllPoints(); panel.healthBarDirectionDropdown:SetPoint("TOPLEFT",sizePage,"TOPLEFT",right,-222); panel.healthBarDirectionDropdown:SetWidth(column)
-		panel.powerBarDirectionDropdown:ClearAllPoints(); panel.powerBarDirectionDropdown:SetPoint("TOPLEFT",sizePage,"TOPLEFT",right,-252); panel.powerBarDirectionDropdown:SetWidth(column)
-		panel.powerBarSideDropdown:ClearAllPoints(); panel.powerBarSideDropdown:SetPoint("TOPLEFT",sizePage,"TOPLEFT",right,-282); panel.powerBarSideDropdown:SetWidth(column)
-		panel.groupArrangementHeading:ClearAllPoints(); panel.groupArrangementHeading:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-282)
-		panel.groupsPerLineButton:ClearAllPoints(); panel.groupsPerLineButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-312); panel.groupsPerLineButton:SetWidth(column)
-		panel.directionButton:ClearAllPoints(); panel.directionButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",right,-312); panel.directionButton:SetWidth(column)
-		panel.groupFilterHeading:ClearAllPoints(); panel.groupFilterHeading:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-352)
-		for group=1,8 do local check=panel.groupFilterChecks[group]; local square=40; local cell=width/8; check:ClearAllPoints(); check:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10+(group-1)*cell+(cell-square)/2,-376); check:SetWidth(square) end
-		panel.layoutPreviewButton:ClearAllPoints(); panel.layoutPreviewButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-414); panel.layoutPreviewButton:SetWidth(width)
+		panel.createLayoutButton:ClearAllPoints(); panel.createLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",start,-54); panel.createLayoutButton:SetWidth(createW)
+		panel.renameLayoutButton:ClearAllPoints(); panel.renameLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",start+createW+gapSmall,-54); panel.renameLayoutButton:SetWidth(renameW)
+		panel.deleteLayoutButton:ClearAllPoints(); panel.deleteLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",start+createW+renameW+gapSmall*2,-54); panel.deleteLayoutButton:SetWidth(deleteW)
+		panel.exportLayoutButton:ClearAllPoints(); panel.exportLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-84); panel.exportLayoutButton:SetWidth((width-gapSmall)/2)
+		panel.importLayoutButton:ClearAllPoints(); panel.importLayoutButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10+(width+gapSmall)/2,-84); panel.importLayoutButton:SetWidth((width-gapSmall)/2)
+		local sliderX={10,10+column+gap,10+2*(column+gap)}
+		for i,slider in ipairs({widthSlider,heightSlider,powerHeightSlider}) do
+			Cell:PlaceOptionsSlider(slider,sizePage,sliderX[i],-130,column)
+			slider.label:ClearAllPoints(); slider.label:SetPoint("TOPLEFT",sizePage,"TOPLEFT",sliderX[i],-130); slider.label:SetWidth(column); slider.label:SetJustifyH("CENTER")
+		slider.minimumLabel:ClearAllPoints(); slider.minimumLabel:SetPoint("RIGHT",sizePage,"TOPLEFT",sliderX[i]+20,-130-SLIDER_LAYOUT.rangeLabelOffset)
+		slider.maximumLabel:ClearAllPoints(); slider.maximumLabel:SetPoint("LEFT",sizePage,"TOPLEFT",sliderX[i]+column-20,-130-SLIDER_LAYOUT.rangeLabelOffset)
+		end
+		for i,divider in ipairs(panel.layoutSliderDividers) do
+			divider:ClearAllPoints(); divider:SetPoint("TOPLEFT",sizePage,"TOPLEFT",sliderX[i+1]-gap/2,-124)
+		end
+		local pairGap=24; local pairWidth=(width-pairGap)/2; local pairX={10,10+pairWidth+pairGap}
+		panel.healthFillLabel:ClearAllPoints(); panel.healthFillLabel:SetPoint("TOPLEFT",sizePage,"TOPLEFT",pairX[1],-190); panel.healthFillLabel:SetWidth(pairWidth); panel.healthFillLabel:SetHeight(16); panel.healthFillLabel:SetJustifyH("CENTER")
+		panel.healthBarDirectionDropdown:ClearAllPoints(); panel.healthBarDirectionDropdown:SetPoint("TOPLEFT",sizePage,"TOPLEFT",pairX[1],-210); panel.healthBarDirectionDropdown:SetWidth(pairWidth)
+		panel.powerDirectionLabel:ClearAllPoints(); panel.powerDirectionLabel:SetPoint("TOPLEFT",sizePage,"TOPLEFT",pairX[2],-190); panel.powerDirectionLabel:SetWidth(pairWidth); panel.powerDirectionLabel:SetHeight(16); panel.powerDirectionLabel:SetJustifyH("CENTER")
+		panel.powerBarDirectionDropdown:ClearAllPoints(); panel.powerBarDirectionDropdown:SetPoint("TOPLEFT",sizePage,"TOPLEFT",pairX[2],-210); panel.powerBarDirectionDropdown:SetWidth(pairWidth)
+		local sideLabelWidth=165
+		panel.powerPositionLabel:ClearAllPoints(); panel.powerPositionLabel:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-244); panel.powerPositionLabel:SetWidth(sideLabelWidth)
+		panel.powerBarSideDropdown:ClearAllPoints(); panel.powerBarSideDropdown:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10+sideLabelWidth+10,-236); panel.powerBarSideDropdown:SetWidth(math.max(120,width-sideLabelWidth-10))
+		local sideVisible=Cell.groupLayoutProfiles[Cell.selectedGroupLayout] and Cell.groupLayoutProfiles[Cell.selectedGroupLayout].powerBarOrientation=="VERTICAL"
+		local arrangementY=sideVisible and -278 or -250
+		panel.groupArrangementHeading:ClearAllPoints(); panel.groupArrangementHeading:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,arrangementY); panel.groupArrangementHeading:SetWidth(width); panel.groupArrangementHeading:SetJustifyH("CENTER")
+		local labelWidthWide=190; local controlX=10+labelWidthWide
+		local layoutOffset=sideVisible and 28 or 0
+		panel.groupsPerLineLabel:ClearAllPoints(); panel.groupsPerLineLabel:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-(294+layoutOffset)); panel.groupsPerLineLabel:SetWidth(labelWidthWide)
+		panel.groupsPerLineButton:ClearAllPoints(); panel.groupsPerLineButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",controlX,-(286+layoutOffset)); panel.groupsPerLineButton:SetWidth(math.max(80,width-labelWidthWide))
+		panel.directionLabel:ClearAllPoints(); panel.directionLabel:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-(324+layoutOffset)); panel.directionLabel:SetWidth(labelWidthWide)
+		panel.directionButton:ClearAllPoints(); panel.directionButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",controlX,-(316+layoutOffset)); panel.directionButton:SetWidth(math.max(80,width-labelWidthWide))
+		panel.groupFilterHeading:ClearAllPoints(); panel.groupFilterHeading:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-(356+layoutOffset)); panel.groupFilterHeading:SetWidth(width); panel.groupFilterHeading:SetJustifyH("CENTER")
+		for group=1,8 do local check=panel.groupFilterChecks[group]; local square=40; local cell=width/8; check:ClearAllPoints(); check:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10+(group-1)*cell+(cell-square)/2,-(380+layoutOffset)); check:SetWidth(square) end
+		panel.layoutPreviewButton:ClearAllPoints(); panel.layoutPreviewButton:SetPoint("TOPLEFT",sizePage,"TOPLEFT",10,-(418+layoutOffset)); panel.layoutPreviewButton:SetWidth(width)
 		-- Keep the spacing pair as the final compact row; mover dragging saves
 		-- positions directly, so the old manual-save button is no longer needed.
-		Cell:PlaceOptionsSlider(panel.spacingXSlider,sizePage,10,-448,column); Cell:PlaceOptionsSlider(panel.spacingYSlider,sizePage,right,-448,column)
-		panel:SetPageContentExtent("size", 506)
+		local spacingY=-452-layoutOffset
+		local spacingColumn=(width-20)/2
+		Cell:PlaceOptionsSlider(panel.spacingXSlider,sizePage,10,spacingY,spacingColumn); Cell:PlaceOptionsSlider(panel.spacingYSlider,sizePage,20+spacingColumn,spacingY,spacingColumn)
+		for _,slider in ipairs({panel.spacingXSlider,panel.spacingYSlider}) do slider.label:ClearAllPoints(); slider.label:SetPoint("TOPLEFT",sizePage,"TOPLEFT",slider.optionX,spacingY); slider.label:SetWidth(spacingColumn); slider.label:SetJustifyH("CENTER") end
+		panel:SetPageContentExtent("size", 510+layoutOffset)
 	end
 	sizePage:SetScript("OnSizeChanged",function() if panel.UpdateLayoutsResponsive then panel.UpdateLayoutsResponsive() end end)
 	panel.UpdateLayoutsResponsive()
 	autoSwitchFrame=CreateFrame("Frame",nil,UIParent)
-	autoSwitchFrame:SetWidth(245); autoSwitchFrame:SetHeight(362); autoSwitchFrame:SetFrameStrata("DIALOG"); autoSwitchFrame:SetFrameLevel(panel:GetFrameLevel()+40); autoSwitchFrame:SetClampedToScreen(true)
+	autoSwitchFrame:SetWidth(340); autoSwitchFrame:SetHeight(362); autoSwitchFrame:SetFrameStrata("DIALOG"); autoSwitchFrame:SetFrameLevel(panel:GetFrameLevel()+40); autoSwitchFrame:SetClampedToScreen(true)
 	autoSwitchFrame:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=8,edgeSize=12,insets={left=4,right=4,top=4,bottom=4}}); autoSwitchFrame:SetBackdropColor(.035,.035,.035,.98)
-	autoSwitchFrame.title=autoSwitchFrame:CreateFontString(nil,"OVERLAY","GameFontNormal"); autoSwitchFrame.title:SetPoint("TOPLEFT",autoSwitchFrame,"TOPLEFT",12,-10); autoSwitchFrame.title:SetText("Layout Auto Switch"); autoSwitchFrame.title:SetTextColor(GetUIAccentColor()); RegisterAccentRefresher(function() autoSwitchFrame.title:SetTextColor(GetUIAccentColor()) end)
-	panel.autoGroupLayoutsCheckbox=AddOptionsCheckbox(autoSwitchFrame,"Automatically use selected layouts",12,-35,218,function()
+	autoSwitchFrame.title=autoSwitchFrame:CreateFontString(nil,"OVERLAY","NotCellFontNormal"); autoSwitchFrame.title:SetPoint("TOPLEFT",autoSwitchFrame,"TOPLEFT",12,-10); autoSwitchFrame.title:SetText("Layout Auto Switch"); autoSwitchFrame.title:SetTextColor(GetUIAccentColor()); RegisterAccentRefresher(function() autoSwitchFrame.title:SetTextColor(GetUIAccentColor()) end)
+	panel.autoGroupLayoutsCheckbox=AddOptionsCheckbox(autoSwitchFrame,"Automatically use selected layouts",12,-35,312,function()
 		Cell.autoGroupLayouts=not Cell.autoGroupLayouts; SaveLayoutSettings(); Cell:UpdateFrames(); Cell:RefreshOptionsMenu()
 	end)
-	autoSwitchFrame.currentProfile=autoSwitchFrame:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); autoSwitchFrame.currentProfile:SetPoint("TOPLEFT",autoSwitchFrame,"TOPLEFT",12,-67); autoSwitchFrame.currentProfile:SetWidth(220); autoSwitchFrame.currentProfile:SetJustifyH("LEFT")
+	autoSwitchFrame.currentProfile=autoSwitchFrame:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); autoSwitchFrame.currentProfile:SetPoint("TOPLEFT",autoSwitchFrame,"TOPLEFT",12,-67); autoSwitchFrame.currentProfile:SetWidth(312); autoSwitchFrame.currentProfile:SetJustifyH("LEFT")
 	panel.autoLayoutDropdowns={}
 	local autoLayoutRows={{"Solo","solo",-98},{"Party","party",-140},{"Raid (Outdoor)","raid_outdoor",-182},{"Raid 10","raid10",-224},{"Raid 25","raid25",-266},{"Raid 40","raid40",-308}}
 	for _,row in ipairs(autoLayoutRows) do
 		local groupLabel,groupType,rowY=row[1],row[2],row[3]
-		local label=autoSwitchFrame:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); label:SetPoint("TOPLEFT",autoSwitchFrame,"TOPLEFT",12,rowY+13); label:SetText(groupLabel)
-		local dropdown=AddLayoutPicker(autoSwitchFrame,12,rowY,218,function() return Cell.layoutAutoSwitch[groupType] end,function(layoutKey)
+		local label=autoSwitchFrame:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); label:SetPoint("TOPLEFT",autoSwitchFrame,"TOPLEFT",12,rowY-7); label:SetWidth(92); label:SetText(groupLabel); label:SetJustifyH("LEFT")
+		local dropdown=AddLayoutPicker(autoSwitchFrame,110,rowY,218,function() return Cell.layoutAutoSwitch[groupType] end,function(layoutKey)
 			Cell.layoutAutoSwitch[groupType]=layoutKey; SaveLayoutSettings(); Cell:UpdateFrames(); Cell:RefreshOptionsMenu()
-		end,groupLabel,true)
+		end,false,true)
 		panel.autoLayoutDropdowns[#panel.autoLayoutDropdowns+1]=dropdown
 	end
 	panel.layoutAutoSwitchFrame=autoSwitchFrame
@@ -2954,7 +3092,7 @@ function Cell:CreateMinimapButton()
 		tooltip:SetOwner(self, "ANCHOR_LEFT")
 		tooltip:AddLine("NotCell")
 		tooltip:AddLine("Left- or right-click to open options", 1, 1, 1)
-		tooltip:Show()
+		tooltip:Show(); StyleNotCellTooltip(tooltip)
 	end
 	local function HideCellTooltip() tooltip:Hide() end
 	Cell.minimapTooltip = tooltip
@@ -3392,7 +3530,7 @@ local function SetDebuffIcon(button, texture, count, dispelName, spellID)
 	end
 	if Cell.debuffFillMode == "gradient" and tint then
 		local width, height = button.health:GetWidth(), button.health:GetHeight()
-		local fraction = math.max(0.10, math.min(1, (tonumber(Cell.debuffFillAmount) or 50) / 100))
+		local fraction = math.max(0.10, math.min(1, (tonumber(Cell.debuffFillAmount) or 100) / 100))
 		local vertical = Cell.debuffFillDirection == "down-to-up" or Cell.debuffFillDirection == "up-to-down"
 		-- Cover a portion of the frame, not a portion of the current HP fill.
 		local extent = vertical and height * fraction or width * fraction
@@ -4102,24 +4240,24 @@ function Cell:CreateButton(index)
 	textOverlay:SetFrameLevel(button:GetFrameLevel() + 2)
 	button.textOverlay = textOverlay
 
-	local name = textOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local name = textOverlay:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	name:SetPoint("TOPLEFT", health, "TOPLEFT", 2, -1)
 	name:SetPoint("TOPRIGHT", health, "TOPRIGHT", -2, -1)
 	name:SetJustifyH("LEFT")
-	local font = nameFonts[Cell.nameFontIndex] or nameFonts[1]
+	local font = nameFonts[Cell.nameFontIndex] or nameFonts[Cell.defaultFontIndex or 1]
 	local outline = nameOutlines[Cell.nameFontOutline] or nameOutlines[2]
 	name:SetFont(font.path, Cell.nameFontSize, outline.flag)
 	button.name = name
 
-	local healthText = textOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local healthText = textOverlay:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	healthText:SetPoint("BOTTOMRIGHT", health, "BOTTOMRIGHT", -2, 0)
 	button.healthText = healthText
-	local powerText = textOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local powerText = textOverlay:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	powerText:SetPoint("BOTTOM", button, "BOTTOM", 0, 4)
 	button.powerText = powerText
-	local statusText = textOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local statusText = textOverlay:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	statusText:SetPoint("CENTER", button, "CENTER")
-	statusText:SetFont(nameFonts[1].path, 12, "THICKOUTLINE")
+	statusText:SetFont(nameFonts[Cell.defaultFontIndex or 1].path, 12, "THICKOUTLINE")
 	statusText:SetJustifyH("CENTER")
 	statusText:Hide()
 	button.statusText = statusText
@@ -4129,9 +4267,9 @@ function Cell:CreateButton(index)
 	debuffIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 	debuffIcon:Hide()
 	button.debuffIcon = debuffIcon
-	local debuffCount = textOverlay:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	local debuffCount = textOverlay:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 	debuffCount:SetPoint("BOTTOMRIGHT", debuffIcon, "BOTTOMRIGHT", 2, -2)
-	debuffCount:SetFont(nameFonts[1].path, 10, "THICKOUTLINE")
+	debuffCount:SetFont(nameFonts[Cell.defaultFontIndex or 1].path, 10, "THICKOUTLINE")
 	debuffCount:SetJustifyH("RIGHT")
 	button.debuffCount = debuffCount
 	button.auraIcons = {buffs={},debuffs={},missingBuffs={},healerBuffs={}}
@@ -4156,7 +4294,7 @@ function Cell:CreateButton(index)
 				icon.missingBuffGlow=glow
 			end
 			icon.texture=icon:CreateTexture(nil,"ARTWORK"); icon.texture:SetAllPoints(icon); icon.texture:SetTexCoord(0.08,0.92,0.08,0.92)
-			icon.count=icon:CreateFontString(nil,"OVERLAY","GameFontNormalSmall"); icon.count:SetPoint("BOTTOMRIGHT",icon,"BOTTOMRIGHT",2,-2); icon.count:SetFont(nameFonts[1].path,9,"THICKOUTLINE"); icon.count:SetJustifyH("RIGHT")
+			icon.count=icon:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall"); icon.count:SetPoint("BOTTOMRIGHT",icon,"BOTTOMRIGHT",2,-2); icon.count:SetFont(nameFonts[Cell.defaultFontIndex or 1].path,9,"THICKOUTLINE"); icon.count:SetJustifyH("RIGHT")
 			button.auraIcons[auraType][auraIndex]=icon
 		end
 	end
@@ -4183,7 +4321,7 @@ function Cell:CreateButton(index)
 		if unit and UnitExists and UnitExists(unit) then
 			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 			GameTooltip:SetUnit(unit)
-			GameTooltip:Show()
+			GameTooltip:Show(); StyleNotCellTooltip(GameTooltip)
 			Cell.activeUnitTooltipOwner = self
 		end
 	end)
@@ -4300,6 +4438,20 @@ end
 function Cell:UpdateFrames()
 	if not self.container then return end
 	local enablePreviewDragging = self.preview and self.layoutPreviewMode ~= nil
+	if self.preview then
+		local playerName = UnitName and UnitName("player")
+		local playerClass
+		if UnitClass then local _, classToken = UnitClass("player"); playerClass = classToken end
+		if playerName then
+			partyPreviewUnits[1].name = playerName .. " (You)"
+			raidPreviewUnits[1].name = playerName .. " (You)"
+		end
+		if playerClass then
+			partyPreviewUnits[1].class = playerClass
+			raidPreviewUnits[1].class = playerClass
+			raidPreviewUnits[1].powerType = previewPowerTypes[playerClass] or 0
+		end
+	end
 	for _, button in ipairs(self.buttons or {}) do
 		if button.previewDragOverlay then
 			if enablePreviewDragging then button.previewDragOverlay:EnableMouse(true); button.previewDragOverlay:Show()
@@ -4596,9 +4748,9 @@ function Cell:ShowHealerIndicatorPrompt(force)
 		prompt:SetWidth(310); prompt:SetHeight(168); prompt:SetPoint("CENTER",UIParent,"CENTER",0,0)
 		prompt:SetFrameStrata("DIALOG"); prompt:SetFrameLevel(500); prompt:SetMovable(true); prompt:EnableMouse(true)
 		prompt:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",tile=true,tileSize=32,edgeSize=16,insets={left=4,right=4,top=4,bottom=4}})
-		prompt.title=prompt:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
+		prompt.title=prompt:CreateFontString(nil,"OVERLAY","NotCellFontNormalLarge")
 		prompt.title:SetPoint("TOP",prompt,"TOP",0,-15); prompt.title:SetText("Healer Indicators")
-		prompt.message=prompt:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+		prompt.message=prompt:CreateFontString(nil,"OVERLAY","NotCellFontHighlightSmall")
 		prompt.message:SetPoint("TOPLEFT",prompt,"TOPLEFT",18,-43); prompt.message:SetPoint("TOPRIGHT",prompt,"TOPRIGHT",-18,-43); prompt.message:SetJustifyH("CENTER")
 		prompt.noButton=AddOptionsButton(prompt,"No",38,-126,100,function() prompt:Hide() end)
 		prompt.yesButton=AddOptionsButton(prompt,"Create",172,-126,100,function() end)
@@ -4629,17 +4781,17 @@ function Cell:ShowSetupWizard()
 		setupFrame:SetWidth(438); setupFrame:SetHeight(520); setupFrame:SetPoint("CENTER",UIParent,"CENTER",0,0)
 		setupFrame:SetFrameStrata("DIALOG"); setupFrame:SetFrameLevel(600); setupFrame:SetMovable(true); setupFrame:EnableMouse(true)
 		setupFrame:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",tile=true,tileSize=32,edgeSize=16,insets={left=4,right=4,top=4,bottom=4}})
-		setupFrame.title=setupFrame:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
+		setupFrame.title=setupFrame:CreateFontString(nil,"OVERLAY","NotCellFontNormalLarge")
 	setupFrame.title:SetPoint("TOP",setupFrame,"TOP",0,-12); setupFrame.title:SetText("Welcome to NotCell")
-		setupFrame.title:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",20,"OUTLINE")
-		setupFrame.intro=setupFrame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+		setupFrame.title:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",20,"OUTLINE")
+		setupFrame.intro=setupFrame:CreateFontString(nil,"OVERLAY","NotCellFontHighlightSmall")
 		setupFrame.intro:SetPoint("TOPLEFT",setupFrame,"TOPLEFT",22,-37); setupFrame.intro:SetWidth(394); setupFrame.intro:SetHeight(22); setupFrame.intro:SetJustifyH("LEFT")
-		setupFrame.intro:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
+		setupFrame.intro:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
 		setupFrame.intro:SetText("Choose an appearance and how your unitframes are arranged.")
 		local function AddWizardLabel(text,y)
-			local label=setupFrame:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+			local label=setupFrame:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall")
 			label:SetPoint("TOPLEFT",setupFrame,"TOPLEFT",22,y); label:SetWidth(194); label:SetHeight(22); label:SetText(text)
-			label:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
+			label:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
 			return label
 		end
 		AddWizardLabel("Select Mode",-71)
@@ -4672,22 +4824,22 @@ function Cell:ShowSetupWizard()
 			Cell:UpdateFrames(); Cell:RefreshOptionsMenu()
 			if setupFrame.UpdateGuidePreview then setupFrame.UpdateGuidePreview() end
 		end,14)
-		setupFrame.healPredictionCheckbox.label:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
-		setupFrame.healPredictionNote=setupFrame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+		setupFrame.healPredictionCheckbox.label:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
+		setupFrame.healPredictionNote=setupFrame:CreateFontString(nil,"OVERLAY","NotCellFontHighlightSmall")
 		setupFrame.healPredictionNote:SetPoint("TOPLEFT",setupFrame,"TOPLEFT",43,-269); setupFrame.healPredictionNote:SetWidth(370); setupFrame.healPredictionNote:SetHeight(18); setupFrame.healPredictionNote:SetJustifyH("LEFT")
-		setupFrame.healPredictionNote:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",12,"OUTLINE")
+		setupFrame.healPredictionNote:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",12,"OUTLINE")
 		setupFrame.healPredictionNote:SetText("Shows estimated incoming heals on unit health bars.")
 		setupFrame.healerCheck=AddOptionsCheckbox(setupFrame,"Create Healer Indicators",22,-293,396,function() setupFrame.createHealerIndicators=not setupFrame.createHealerIndicators; setupFrame.healerCheck:SetChecked(setupFrame.createHealerIndicators) end,14)
-		setupFrame.healerCheck.label:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
-		setupFrame.healerNote=setupFrame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+		setupFrame.healerCheck.label:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
+		setupFrame.healerNote=setupFrame:CreateFontString(nil,"OVERLAY","NotCellFontHighlightSmall")
 		setupFrame.healerNote:SetPoint("TOPLEFT",setupFrame,"TOPLEFT",43,-311); setupFrame.healerNote:SetWidth(370); setupFrame.healerNote:SetHeight(18); setupFrame.healerNote:SetJustifyH("LEFT")
-		setupFrame.healerNote:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",12,"OUTLINE")
+		setupFrame.healerNote:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",12,"OUTLINE")
 		setupFrame.healerNote:SetText("Tracks healing-over-time effects and shields on group frames.")
 		setupFrame.blizzardCheck=AddOptionsCheckbox(setupFrame,"Hide Blizzard group frames",22,-335,396,function() setupFrame.hideBlizzardFrames=not setupFrame.hideBlizzardFrames; setupFrame.blizzardCheck:SetChecked(setupFrame.hideBlizzardFrames) end,14)
-		setupFrame.blizzardCheck.label:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
-		setupFrame.blizzardNote=setupFrame:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+		setupFrame.blizzardCheck.label:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
+		setupFrame.blizzardNote=setupFrame:CreateFontString(nil,"OVERLAY","NotCellFontHighlightSmall")
 		setupFrame.blizzardNote:SetPoint("TOPLEFT",setupFrame,"TOPLEFT",43,-353); setupFrame.blizzardNote:SetWidth(380); setupFrame.blizzardNote:SetHeight(18); setupFrame.blizzardNote:SetJustifyH("LEFT")
-		setupFrame.blizzardNote:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",12,"OUTLINE")
+		setupFrame.blizzardNote:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",12,"OUTLINE")
 		setupFrame.blizzardNote:SetText("Party/Raid only; Player, Target, and Target of Target stay visible.")
 		setupFrame.finishButton=AddOptionsButton(setupFrame,"Finish Setup",64,-480,150,function() end)
 		setupFrame.skipButton=AddOptionsButton(setupFrame,"Skip",234,-480,150,function() end)
@@ -4705,11 +4857,11 @@ function Cell:ShowSetupWizard()
 		unit.power=CreateFrame("StatusBar",nil,unit); unit.power:SetMinMaxValues(0,1); unit.power:SetValue(.62); unit.power:SetStatusBarTexture(Cell.unitTexture or "Interface\\Buttons\\WHITE8X8"); unit.power:SetStatusBarColor(.15,.42,1,1)
 		unit.powerBackground=unit.power:CreateTexture(nil,"BACKGROUND"); unit.powerBackground:SetAllPoints(unit.power); unit.powerBackground:SetTexture("Interface\\Buttons\\WHITE8X8"); unit.powerBackground:SetVertexColor(.18,.18,.18,1)
 		unit.textOverlay=CreateFrame("Frame",nil,unit); unit.textOverlay:SetAllPoints(unit); unit.textOverlay:SetFrameLevel(unit:GetFrameLevel()+2)
-		unit.name=unit.textOverlay:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
-		unit.healthText=unit.textOverlay:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
-		unit.powerText=unit.textOverlay:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+		unit.name=unit.textOverlay:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall")
+		unit.healthText=unit.textOverlay:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall")
+		unit.powerText=unit.textOverlay:CreateFontString(nil,"OVERLAY","NotCellFontNormalSmall")
 		unit.healthText:SetText("72%"); unit.powerText:SetText("62%")
-		local guideFont=STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
+		local guideFont=Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF"
 		unit.name:SetFont(guideFont,14,"OUTLINE"); unit.healthText:SetFont(guideFont,12,"OUTLINE"); unit.powerText:SetFont(guideFont,10,"OUTLINE")
 		setupFrame.guideElapsed=0
 		setupFrame.UpdateGuidePreview=function()
@@ -4726,15 +4878,20 @@ function Cell:ShowSetupWizard()
 			local healthFont,healthOutline=GetTextFontAndOutline(healthSettings.font,healthSettings.outline,Cell.healthTextFontIndex,Cell.healthTextFontOutline)
 			local powerFont,powerOutline=GetTextFontAndOutline(powerSettings.font,powerSettings.outline,Cell.powerTextFontIndex,Cell.powerTextFontOutline)
 			local nameAnchor=nameSettings.anchor or "TOPLEFT"
-			local healthAnchor=healthSettings.anchor or "BOTTOMRIGHT"
+			local healthAnchor=healthSettings.anchor or "RIGHT"
 			local powerAnchor=powerSettings.anchor or "BOTTOM"
 			unit.name:SetFont(nameFont.path,nameSettings.size or layout.nameFontSize or Cell.nameFontSize or 14,nameOutline.flag)
 			unit.healthText:SetFont(healthFont.path,healthSettings.size or layout.healthTextFontSize or Cell.healthTextFontSize or 10,healthOutline.flag)
 			unit.powerText:SetFont(powerFont.path,powerSettings.size or layout.powerTextFontSize or Cell.powerTextFontSize or 10,powerOutline.flag)
 			unit.name:ClearAllPoints(); unit.name:SetPoint(nameAnchor,unit.health,nameAnchor,tonumber(nameSettings.x) or 2,tonumber(nameSettings.y) or -1)
 			unit.name:SetText(UnitName and UnitName("player") or "Sample Player")
+			local previewButton = {name = unit.name}
+			SetNameColor(previewButton, "player", playerClass)
 			unit.healthText:ClearAllPoints(); unit.healthText:SetPoint(healthAnchor,unit,healthAnchor,tonumber(healthSettings.x) or 0,tonumber(healthSettings.y) or 0)
 			unit.powerText:ClearAllPoints(); unit.powerText:SetPoint(powerAnchor,unit,powerAnchor,tonumber(powerSettings.x) or 0,tonumber(powerSettings.y) or 0)
+			local previewPowerType = UnitPowerType and UnitPowerType("player") or 0
+			SetStyledTextColor(unit.healthText, healthSettings.colorMode or Cell.healthTextColorMode, healthSettings.color or Cell.healthTextCustomColor, playerClass, nil, unit.guideHealth or .72)
+			SetStyledTextColor(unit.powerText, powerSettings.colorMode or Cell.powerTextColorMode, powerSettings.color or Cell.powerTextCustomColor, playerClass, previewPowerType)
 			unit.healthText:SetJustifyH(string.find(healthAnchor,"LEFT",1,true) and "LEFT" or (string.find(healthAnchor,"RIGHT",1,true) and "RIGHT" or "CENTER"))
 			unit.powerText:SetJustifyH(string.find(powerAnchor,"LEFT",1,true) and "LEFT" or (string.find(powerAnchor,"RIGHT",1,true) and "RIGHT" or "CENTER"))
 			if nameSettings.enabled==false then unit.name:Hide() else unit.name:Show() end
@@ -4752,13 +4909,11 @@ function Cell:ShowSetupWizard()
 				unit.power:SetPoint("BOTTOM"..side,unit,"BOTTOM"..side,side=="RIGHT" and -2 or 2,2)
 				unit.health:SetPoint("TOPLEFT",unit,"TOPLEFT",side=="LEFT" and 8 or 2,-2)
 				unit.health:SetPoint("BOTTOMRIGHT",unit,"BOTTOMRIGHT",side=="RIGHT" and -8 or -2,2)
-				unit.powerText:SetPoint("BOTTOM",unit,"BOTTOM",0,3)
 			else
 				unit.health:SetPoint("TOPLEFT",unit,"TOPLEFT",0,0)
 				unit.health:SetPoint("BOTTOMRIGHT",unit,"BOTTOMRIGHT",0,(Cell.powerBarHeight or 4)+2)
 				unit.power:SetHeight(Cell.powerBarHeight or 4)
 				unit.power:SetPoint("BOTTOMLEFT",unit,"BOTTOMLEFT",2,1); unit.power:SetPoint("BOTTOMRIGHT",unit,"BOTTOMRIGHT",-2,1)
-				unit.powerText:SetPoint("BOTTOMRIGHT",unit,"BOTTOMRIGHT",-5,(Cell.powerBarHeight or 4)+2)
 			end
 			unit.heal:SetAllPoints(unit.health)
 			local healthColor=Cell.customHealthColor or {.2,.72,.3}
@@ -4778,14 +4933,19 @@ function Cell:ShowSetupWizard()
 				unit.guideHealth=unit.guideHealth or .72
 				unit.guideHealth=unit.guideHealth<=.48 and .78 or unit.guideHealth-.08
 				unit.health:SetValue(unit.guideHealth); unit.heal:SetValue(math.min(1,unit.guideHealth+.12)); unit.healthText:SetText(math.floor(unit.guideHealth*100).."%")
+				local classToken
+				if UnitClass then local _, token = UnitClass("player"); classToken = token end
+				local indicators = (Cell.groupLayoutProfiles[Cell.selectedGroupLayout] or {}).indicators or {}
+				local healthSettings = indicators.healthText or {}
+				SetStyledTextColor(unit.healthText, healthSettings.colorMode or Cell.healthTextColorMode, healthSettings.color or Cell.healthTextCustomColor, classToken, nil, unit.guideHealth)
 			end
 		end)
 		for _,dropdown in ipairs({setupFrame.profileDropdown,setupFrame.growthDropdown,setupFrame.healthOrientationDropdown,setupFrame.powerOrientationDropdown,setupFrame.powerSideDropdown}) do
-			dropdown.cellLabel:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
-			for _,option in ipairs(dropdown.choiceOptions or {}) do option.cellLabel:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",12,"OUTLINE") end
+			dropdown.cellLabel:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",13,"OUTLINE")
+			for _,option in ipairs(dropdown.choiceOptions or {}) do option.cellLabel:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",12,"OUTLINE") end
 		end
-		setupFrame.finishButton.cellLabel:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",14,"OUTLINE")
-		setupFrame.skipButton.cellLabel:SetFont(STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF",14,"OUTLINE")
+		setupFrame.finishButton.cellLabel:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",14,"OUTLINE")
+		setupFrame.skipButton.cellLabel:SetFont(Cell.defaultFontPath or "Fonts\\FRIZQT__.TTF",14,"OUTLINE")
 		setupFrame.skipButton.cellBackground:SetVertexColor(.40,.06,.06,1)
 		setupFrame.skipButton:SetScript("OnEnter",function(button) button.cellBackground:SetVertexColor(.58,.10,.10,1); button.cellLabel:SetTextColor(1,.9,.9) end)
 		setupFrame.skipButton:SetScript("OnLeave",function(button) button.cellBackground:SetVertexColor(.40,.06,.06,1); button.cellLabel:SetTextColor(.95,.86,.86) end)
@@ -4921,7 +5081,7 @@ function Cell:Initialize()
 		background:SetAllPoints(control)
 		background:SetTexture("Interface\\Buttons\\WHITE8X8")
 		background:SetVertexColor(color[1], color[2], color[3], 0.95)
-		local text = control:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		local text = control:CreateFontString(nil, "OVERLAY", "NotCellFontNormalSmall")
 		text:SetPoint("CENTER", control, "CENTER", 0, 0)
 		text:SetText(label)
 		control:Hide()
@@ -4933,7 +5093,7 @@ function Cell:Initialize()
 		if not GameTooltip then return end
 		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 		GameTooltip:SetText("Drag to reposition. Left Click to open settings. Right Click to refresh unitframes.")
-		GameTooltip:Show()
+		GameTooltip:Show(); StyleNotCellTooltip(GameTooltip)
 	end)
 	moveHandle:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
 	local movePositionLayout
@@ -5060,11 +5220,14 @@ local function MaybeShowFirstRunSetup()
 			Cell.debuffBorderEnabled=false
 			settings.debuffFillMode="solid"
 			settings.debuffBorderEnabled=false
-			Cell.activeClickCastProfile="common"
-			Cell.clickCasts=Cell.clickCastProfiles.common or {}
-			Cell.clickCasts["1"]={kind="target",text=""}
-			Cell.clickCasts["2"]={kind="menu",text=""}
-			Cell.clickCastProfiles.common=Cell.clickCasts
+			local characterSettings=GetCharacterClickCastDB()
+			local characterProfile=Cell.clickCastProfiles[Cell.clickCastCharacterKey] or {}
+			characterProfile["1"]=characterProfile["1"] or {kind="target",text=""}
+			characterProfile["2"]=characterProfile["2"] or {kind="menu",text=""}
+			Cell.clickCastProfiles[Cell.clickCastCharacterKey]=characterProfile
+			Cell.activeClickCastProfile=Cell.clickCastCharacterKey
+			Cell.clickCasts=characterProfile
+			characterSettings.vanillaClickCastDefaultsInitialized=true
 			NotCellDB.initialDefaultsApplied=true
 			SaveClickCastSettings()
 			SaveCellSettingsDB()
@@ -5168,13 +5331,21 @@ eventFrame:SetScript("OnEvent", function(frame, event, arg1)
 		Cell.clickCastProfiles.common = Cell.clickCastProfiles.common or (type(characterSettings.vanillaClickCasts) == "table" and characterSettings.vanillaClickCasts
 			or (type(settings.clickCasts) == "table" and settings.clickCasts or {}))
 		Cell.clickCastProfiles[Cell.clickCastCharacterKey] = Cell.clickCastProfiles[Cell.clickCastCharacterKey] or {}
+		local characterProfile = Cell.clickCastProfiles[Cell.clickCastCharacterKey]
+		local initializeCharacterBinds = not characterSettings.vanillaClickCastDefaultsInitialized
+		if initializeCharacterBinds then
+			characterProfile["1"] = characterProfile["1"] or {kind="target",text=""}
+			characterProfile["2"] = characterProfile["2"] or {kind="menu",text=""}
+			characterSettings.vanillaClickCastDefaultsInitialized = true
+		end
 		Cell.clickCastProfileNames = type(characterSettings.vanillaClickCastProfileNames) == "table" and characterSettings.vanillaClickCastProfileNames
 			or (type(settings.clickCastProfileNames) == "table" and settings.clickCastProfileNames) or Cell.clickCastProfileNames or {}
 		Cell.clickCastProfileNames.common = "Common"
 		Cell.clickCastProfileNames[Cell.clickCastCharacterKey] = Cell.clickCastProfileNames[Cell.clickCastCharacterKey] or (UnitName and UnitName("player") or "This character")
-		Cell.activeClickCastProfile = characterSettings.vanillaActiveClickCastProfile or settings.activeClickCastProfile or Cell.activeClickCastProfile or "common"
-		if not Cell.clickCastProfiles[Cell.activeClickCastProfile] then Cell.activeClickCastProfile = "common" end
+		Cell.activeClickCastProfile = characterSettings.vanillaActiveClickCastProfile or (initializeCharacterBinds and Cell.clickCastCharacterKey) or settings.activeClickCastProfile or Cell.clickCastCharacterKey
+		if not Cell.clickCastProfiles[Cell.activeClickCastProfile] then Cell.activeClickCastProfile = Cell.clickCastCharacterKey end
 		Cell.clickCasts = Cell.clickCastProfiles[Cell.activeClickCastProfile]
+		if initializeCharacterBinds then SaveClickCastSettings() end
 		-- Move legacy shared click-casting data into this character's database.
 		-- New edits are saved only to NotCellCharacterDB.
 		if type(characterSettings.vanillaClickCastProfiles) ~= "table" and legacyClickCastData then
@@ -5195,7 +5366,7 @@ eventFrame:SetScript("OnEvent", function(frame, event, arg1)
 		Cell.powerColorAlpha = math.max(0, math.min(95, tonumber(settings.powerColorAlpha) or 95))
 		Cell.backgroundAlpha = math.max(0, math.min(95, tonumber(settings.backgroundAlpha) or 95))
 		Cell.outOfRangeAlpha = math.max(0, math.min(95, tonumber(settings.outOfRangeAlpha) or 45))
-		Cell.unitTexture = settings.unitTexture or "Interface\\Buttons\\WHITE8X8"
+		Cell.unitTexture = settings.unitTexture or "Interface\\AddOns\\NotCell\\Media\\statusbar.tga"
 		Cell.barAnimationMode = NormalizeBarAnimationMode(settings.barAnimationMode, settings.barAnimationDuration)
 		Cell.targetHighlightColor = settings.targetHighlightColor or {1, 0.68, 0.12}
 		Cell.mouseoverHighlightColor = settings.mouseoverHighlightColor or {0.15, 0.55, 1}
@@ -5212,7 +5383,8 @@ eventFrame:SetScript("OnEvent", function(frame, event, arg1)
 		Cell.buttonWidth = math.max(40, math.min(300, tonumber(settings.buttonWidth) or 130))
 		Cell.buttonHeight = math.max(32, math.min(120, tonumber(settings.buttonHeight) or 50))
 		Cell.powerBarHeight = math.max(2, math.min(12, tonumber(settings.powerBarHeight) or Cell.powerBarHeight or 4))
-		Cell.autoGroupLayouts = settings.autoGroupLayouts and true or false
+		Cell.autoGroupLayouts = settings.autoGroupLayouts ~= false
+		if settings.autoGroupLayouts == nil then settings.autoGroupLayouts = true end
 		local oldProfiles = type(settings.groupLayoutProfiles) == "table" and settings.groupLayoutProfiles or Cell.groupLayoutProfiles or {}
 		Cell.groupLayoutProfiles = type(settings.layouts) == "table" and settings.layouts or oldProfiles
 		if not Cell.groupLayoutProfiles.Default then
@@ -5275,12 +5447,12 @@ eventFrame:SetScript("OnEvent", function(frame, event, arg1)
 		LoadDebuffSettings(settings)
 		Cell.nameColorMode = settings.nameColorMode == "custom" and "custom" or "class"
 		Cell.nameCustomColor = settings.nameCustomColor or {1, 1, 1}
-		Cell.nameFontIndex = math.max(1, math.min(table.getn(nameFonts), tonumber(settings.nameFontIndex) or 1))
+		Cell.nameFontIndex = math.max(1, math.min(table.getn(nameFonts), tonumber(settings.nameFontIndex) or Cell.defaultFontIndex or 1))
 		Cell.nameFontSize = math.max(10, math.min(20, tonumber(settings.nameFontSize) or 14))
 		Cell.nameFontOutline = math.max(1, math.min(table.getn(nameOutlines), tonumber(settings.nameFontOutline) or 2))
 		Cell.showHealthValues = settings.showHealthValues ~= false
 		Cell.healthValueFormat = settings.healthValueFormat == "absolute" and "absolute" or "percent"
-		Cell.healthTextFontIndex = math.max(1, math.min(table.getn(nameFonts), tonumber(settings.healthTextFontIndex) or 1))
+		Cell.healthTextFontIndex = math.max(1, math.min(table.getn(nameFonts), tonumber(settings.healthTextFontIndex) or Cell.defaultFontIndex or 1))
 		Cell.healthTextFontSize = math.max(8, math.min(20, tonumber(settings.healthTextFontSize) or 10))
 		Cell.healthTextFontOutline = math.max(1, math.min(table.getn(nameOutlines), tonumber(settings.healthTextFontOutline) or 2))
 		Cell.healthTextColorMode = settings.healthTextColorMode or "custom"
@@ -5289,11 +5461,11 @@ eventFrame:SetScript("OnEvent", function(frame, event, arg1)
 		Cell.healthTextAnchor = settings.healthTextAnchor or "BOTTOMRIGHT"
 		Cell.showPowerValues = settings.showPowerValues ~= false
 		Cell.powerValueFormat = settings.powerValueFormat == "absolute" and "absolute" or "percent"
-		Cell.powerTextFontIndex = math.max(1, math.min(table.getn(nameFonts), tonumber(settings.powerTextFontIndex) or 1))
+		Cell.powerTextFontIndex = math.max(1, math.min(table.getn(nameFonts), tonumber(settings.powerTextFontIndex) or Cell.defaultFontIndex or 1))
 		Cell.powerTextFontSize = math.max(8, math.min(20, tonumber(settings.powerTextFontSize) or 10))
 		Cell.powerTextFontOutline = math.max(1, math.min(table.getn(nameOutlines), tonumber(settings.powerTextFontOutline) or 2))
-		Cell.powerTextColorMode = settings.powerTextColorMode or "custom"
-		if Cell.powerTextColorMode ~= "power" and Cell.powerTextColorMode ~= "class" and Cell.powerTextColorMode ~= "custom" then Cell.powerTextColorMode = "custom" end
+		Cell.powerTextColorMode = settings.powerTextColorMode or "power"
+		if Cell.powerTextColorMode ~= "power" and Cell.powerTextColorMode ~= "class" and Cell.powerTextColorMode ~= "custom" then Cell.powerTextColorMode = "power" end
 		Cell.powerTextCustomColor = settings.powerTextCustomColor or {1, 1, 1}
 		Cell.powerTextAnchor = settings.powerTextAnchor or "BOTTOM"
 		Cell.showSolo = settings.showSolo ~= false
@@ -5463,3 +5635,8 @@ SlashCmdList["NOTCELL"] = function(message)
 		DEFAULT_CHAT_FRAME:AddMessage("NotCell commands: /notcell opt, /notcell setup, /notcell minimap show, /notcell blizz hide|show, /notcell healthcolor class|custom RRGGBB, /notcell show|hide, /notcell preview [party|status|raid10|raid20|raid25|raid]")
 	end
 end
+
+
+
+
+

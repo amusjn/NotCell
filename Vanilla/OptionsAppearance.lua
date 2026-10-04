@@ -122,7 +122,7 @@ Cell.OptionPageBuilders.appearance = function(context)
 	end)
 	panel.barAnimationButton = AddChoiceDropdown(page, styleOptionWidth, styleGroupLeft+styleOptionWidth+16, styleControlY, function()
 		for i = 1, table.getn(animationChoices) do if animationChoices[i].value == Cell.barAnimationMode then return "Animation: " .. animationChoices[i].name end end
-		return "Animation: Smooth"
+		return "Animation: Flash"
 	end, animationChoices, function(value)
 		Cell.barAnimationMode = value; SaveSetting("barAnimationMode", value); Cell:RefreshOptionsMenu()
 	end)
@@ -178,19 +178,19 @@ Cell.OptionPageBuilders.appearance = function(context)
 	AddSectionTitle(page, "Highlights & Heal Prediction", 10, highlightsY)
 	panel.targetHighlightCheckbox = AddOptionsCheckbox(page, "Target Highlight", 10, highlightsY - 24, 196, function()
 		Cell.targetHighlightEnabled = not Cell.targetHighlightEnabled; SaveSetting("targetHighlightEnabled", Cell.targetHighlightEnabled); Cell:UpdateFrames(); Cell:RefreshOptionsMenu()
-	end, 20, "GameFontNormal")
+	end, 20, "NotCellFontNormal")
 	panel.targetHighlightSwatch = AddSwatch("targetHighlightSwatch", 214, highlightsY - 25, function() return Cell.targetHighlightColor end,
 		function() Cell:OpenHealthColorPicker("targetHighlightColor", Cell.targetHighlightColor, false) end)
 	panel.mouseoverHighlightCheckbox = AddOptionsCheckbox(page, "Mouseover Highlight", rightX, highlightsY - 24, 196, function()
 		Cell.mouseoverHighlightEnabled = not Cell.mouseoverHighlightEnabled; SaveSetting("mouseoverHighlightEnabled", Cell.mouseoverHighlightEnabled); Cell:UpdateFrames(); Cell:RefreshOptionsMenu()
-	end, 20, "GameFontNormal")
+	end, 20, "NotCellFontNormal")
 	panel.mouseoverHighlightSwatch = AddSwatch("mouseoverHighlightSwatch", 454, highlightsY - 25, function() return Cell.mouseoverHighlightColor end,
 		function() Cell:OpenHealthColorPicker("mouseoverHighlightColor", Cell.mouseoverHighlightColor, false) end)
 	grid:Add(panel.targetHighlightCheckbox, highlightsY - 24, 1, 1, function(cw) return cw - 32 end); grid:Add(panel.targetHighlightSwatch, highlightsY - 25, 1, 1, 22, "right")
 	grid:Add(panel.mouseoverHighlightCheckbox, highlightsY - 24, 2, 1, function(cw) return cw - 32 end); grid:Add(panel.mouseoverHighlightSwatch, highlightsY - 25, 2, 1, 22, "right")
 	panel.healPredictionCheckbox = AddOptionsCheckbox(page, "Heal Prediction", 10, predictionY, 160, function()
 		Cell.healPredictionEnabled = not Cell.healPredictionEnabled; SaveSetting("healPredictionEnabled", Cell.healPredictionEnabled); Cell:UpdateFrames(); Cell:RefreshOptionsMenu()
-	end, 20, "GameFontNormal")
+	end, 20, "NotCellFontNormal")
 	panel.healPredictionSwatch = AddSwatch("healPredictionSwatch", 214, predictionY - 1, function() return Cell.healPredictionColor end,
 		function() Cell:OpenHealthColorPicker("healPredictionColor", Cell.healPredictionColor, false) end)
 	grid:Add(panel.healPredictionCheckbox, predictionY, 1, 1, function(cw) return cw - 32 end); grid:Add(panel.healPredictionSwatch, predictionY - 1, 1, 1, 22, "right")
@@ -209,3 +209,5 @@ Cell.OptionPageBuilders.appearance = function(context)
 	panel.UpdateAppearanceResponsive()
 
 end
+
+

@@ -2,7 +2,7 @@
 ## Title: NotCell
 ## Notes: Party and raid unit frames for WoW 1.12.1 -- Requires the ClassicAPI; bundled HealComm-1.0 supports incoming-heal prediction.
 ## Author: amusjn (Vanilla backport); original Cell contributors
-## Version: 1.0.0
+## Version: 1.2.0
 ## SavedVariables: NotCellDB, NotCellVanillaDB, CellDB, CellVanillaDB
 ## SavedVariablesPerCharacter: NotCellCharacterDB, CellCharacterDB
 
